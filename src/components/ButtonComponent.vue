@@ -78,7 +78,7 @@ const truncatedHtmlDescription = computed(() => {
 // Style dynamique pour la description
 const descriptionStyle = computed(() => {
   return {
-    maxHeight: props.detailed ? '215px' : 'auto', // Limite la hauteur pour le mode détaillé seulement
+    maxHeight: props.detailed ? '300px' : 'auto', // Limite la hauteur pour le mode détaillé seulement
     overflowY: props.detailed ? 'auto' : 'hidden', // Activer l'ascenseur seulement en mode détaillé
     overflowX: 'hidden',
     fontFamily: 'Arial, sans-serif',
