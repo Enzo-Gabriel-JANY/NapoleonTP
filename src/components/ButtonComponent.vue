@@ -8,28 +8,31 @@
     </v-btn>
     <v-expand-transition>
       <div v-if="showDescription" :style="descriptionStyle" class="description-container">
+        <!-- Affichage en mode détaillé -->
         <div v-if="detailed" class="detailed-text">
           <div>
             <strong>Date :</strong>
-            <p>{{ description.date }}</p>
+            <p>{{ truncatedDate }}</p>
           </div>
           <div>
             <strong>Lieu :</strong>
-            <p>{{ description.lieu }}</p>
+            <p>{{ truncatedLieu }}</p>
           </div>
           <div>
             <strong>Forces en présence :</strong>
-            <p>{{ description.forces }}</p>
+            <p>{{ truncatedForces }}</p>
           </div>
           <div>
             <strong>Pertes :</strong>
-            <p>{{ description.pertes }}</p>
+            <p>{{ truncatedPertes }}</p>
           </div>
+
           <div>
             <strong>Situation Générale :</strong>
-            <p>{{ description.situation }}</p>
+            <p>{{ truncatedSituation }}</p>
           </div>
         </div>
+        <!-- Affichage en mode non détaillé -->
         <div v-else v-html="truncatedHtmlDescription"></div>
       </div>
     </v-expand-transition>
@@ -39,6 +42,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
+// Définir les props
 const props = defineProps<{
   description: {
     forces: string,
@@ -57,30 +61,48 @@ const toggleDetail = () => {
 
 const showDescription = ref(true);
 
-// Concaténer toutes les sections de la description avec les titres inclus
-const fullDescription = computed(() => {
-  return `Date : ${props.description.date}\nLieu : ${props.description.lieu}\nForces en présence : ${props.description.forces}\nPertes : ${props.description.pertes}\nSituation Générale : ${props.description.situation}`;
-});
+// Limites de caractères
+const maxCharsNonDetailed = 300;
+const maxCharsDetailed = 900;
 
-// Tronquer le texte complet pour le mode non détaillé avec HTML pour les titres en gras
+// Fonction utilitaire pour tronquer le texte
+const truncateText = (text: string, maxLength: number) => {
+  return text.length > maxLength ? text.slice(0, maxLength) : text;
+};
+
+// Tronquer chaque champ séparément en mode détaillé
+const truncatedDate = computed(() => truncateText(props.description.date, maxCharsDetailed));
+const truncatedLieu = computed(() => truncateText(props.description.lieu, maxCharsDetailed));
+const truncatedForces = computed(() => truncateText(props.description.forces, maxCharsDetailed));
+const truncatedPertes = computed(() => truncateText(props.description.pertes, maxCharsDetailed));
+const truncatedSituation = computed(() => truncateText(props.description.situation, maxCharsDetailed));
+
+// Calculer la description tronquée pour le mode non détaillé
 const truncatedHtmlDescription = computed(() => {
-  const maxLength = 300; // Limite pour le mode non détaillé
-  const description = `
+  // Combiner toutes les parties de la description
+  let fullDescription = `
     <strong>Date :</strong> ${props.description.date}<br>
     <strong>Lieu :</strong> ${props.description.lieu}<br>
     <strong>Forces en présence :</strong> ${props.description.forces}<br>
     <strong>Pertes :</strong> ${props.description.pertes}<br>
-    <strong>Situation Générale :</strong> ${props.description.situation}
+
   `;
-  return description.length > maxLength ? description.slice(0, maxLength) + '...' : description;
+
+
+  // Tronquer si dépasse 300 caractères
+  if (fullDescription.length > maxCharsNonDetailed) {
+    return fullDescription.slice(0, maxCharsNonDetailed) + '...';
+  }
+
+  return fullDescription;
 });
 
-// Style dynamique pour la description
+// Styles réactifs pour la description
 const descriptionStyle = computed(() => {
   return {
-    maxHeight: props.detailed ? '20rem' : 'auto', // Limite la hauteur pour le mode détaillé seulement
-    overflowY: props.detailed ? 'auto' : 'hidden', // Activer l'ascenseur seulement en mode détaillé
-    overflowX: 'hidden',
+    maxHeight: props.detailed ? '320px' : 'none', // Hauteur max fixée en pixels
+    overflowY: props.detailed ? 'auto' : 'hidden', // Ascenseur uniquement en mode détaillé
+    overflowX: 'hidden', // Pas d'ascenseur horizontal
     fontFamily: 'Arial, sans-serif',
     fontSize: '12px',
     width: '100%',
@@ -140,27 +162,3 @@ p {
   white-space: pre-wrap;
 }
 </style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
