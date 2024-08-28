@@ -26,7 +26,6 @@
             <strong>Pertes :</strong>
             <p>{{ truncatedPertes }}</p>
           </div>
-
           <div>
             <strong>Situation Générale :</strong>
             <p>{{ truncatedSituation }}</p>
@@ -40,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 // Définir les props
 const props = defineProps<{
@@ -61,9 +60,33 @@ const toggleDetail = () => {
 
 const showDescription = ref(true);
 
-// Limites de caractères
-const maxCharsNonDetailed = 300;
-const maxCharsDetailed = 900;
+// Détecter la largeur de l'écran
+const screenWidth = ref(window.innerWidth);
+
+const handleResize = () => {
+  screenWidth.value = window.innerWidth;
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
+// Définir les limites de caractères basées sur la largeur de l'écran
+const dynamicMaxChars = computed(() => {
+  if (screenWidth.value < 600) {
+    return 800; // Petit écran
+  } else if (screenWidth.value >= 600 && screenWidth.value < 1200) {
+    return 850; // Taille moyenne
+  } else {
+    return 900; // Grand écran
+  }
+});
+
+const maxCharsNonDetailed = 300; // Limite de caractères pour le mode non détaillé
 
 // Fonction utilitaire pour tronquer le texte
 const truncateText = (text: string, maxLength: number) => {
@@ -71,25 +94,24 @@ const truncateText = (text: string, maxLength: number) => {
 };
 
 // Tronquer chaque champ séparément en mode détaillé
-const truncatedDate = computed(() => truncateText(props.description.date, maxCharsDetailed));
-const truncatedLieu = computed(() => truncateText(props.description.lieu, maxCharsDetailed));
-const truncatedForces = computed(() => truncateText(props.description.forces, maxCharsDetailed));
-const truncatedPertes = computed(() => truncateText(props.description.pertes, maxCharsDetailed));
-const truncatedSituation = computed(() => truncateText(props.description.situation, maxCharsDetailed));
+const truncatedDate = computed(() => truncateText(props.description.date, dynamicMaxChars.value));
+const truncatedLieu = computed(() => truncateText(props.description.lieu, dynamicMaxChars.value));
+const truncatedForces = computed(() => truncateText(props.description.forces, dynamicMaxChars.value));
+const truncatedPertes = computed(() => truncateText(props.description.pertes, dynamicMaxChars.value));
+const truncatedSituation = computed(() => truncateText(props.description.situation, dynamicMaxChars.value));
 
 // Calculer la description tronquée pour le mode non détaillé
 const truncatedHtmlDescription = computed(() => {
-  // Combiner toutes les parties de la description
+  const maxChars = dynamicMaxChars.value;
+
   let fullDescription = `
     <strong>Date :</strong> ${props.description.date}<br>
     <strong>Lieu :</strong> ${props.description.lieu}<br>
     <strong>Forces en présence :</strong> ${props.description.forces}<br>
     <strong>Pertes :</strong> ${props.description.pertes}<br>
-
   `;
 
-
-  // Tronquer si dépasse 300 caractères
+  // Tronquer si dépasse la limite de 300 caractères en mode non détaillé
   if (fullDescription.length > maxCharsNonDetailed) {
     return fullDescription.slice(0, maxCharsNonDetailed) + '...';
   }
