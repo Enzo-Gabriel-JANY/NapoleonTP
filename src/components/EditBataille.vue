@@ -61,7 +61,7 @@
           ></v-switch>
         </v-col>
         <v-col>
-          <span>{{ bataille.victoire ? 'Oui' : 'Non' }}</span>
+          <span>{{ bataille.victoire ? 'Victoire' : 'Défaite' }}</span>
         </v-col>
       </v-row>
 
