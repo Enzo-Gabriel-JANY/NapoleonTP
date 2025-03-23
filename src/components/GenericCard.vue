@@ -18,7 +18,7 @@
       <!-- Actions à droite de la description -->
       <div class="card-actions">
         <!-- Bouton intégré -->
-        <button @click="emitAction" class="primary-action">Action principale</button>
+<!--        <button @click="emitAction" class="primary-action">Information</button>-->
 
         <!-- Slot pour d'autres actions -->
         <slot name="actions"></slot>

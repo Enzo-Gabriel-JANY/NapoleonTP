@@ -1,12 +1,14 @@
 <script setup>
-import Home from "@/pages/Home.vue";
-import Home2 from "@/pages/Home2.vue";
+import Home from "@/pages/HistoricHomePage.vue";
+import GenericCardDemo from "@/pages/GenericCardDemo.vue";
+import LocalCardList from "@/pages/LocalCardList.vue";
+import NapoleonCardList from "@/pages/NapoleonCardList.vue";
 </script>
 
 <template>
 
   <main>
-    <Home />
+    <NapoleonCardList />
   </main>
 </template>
 
