@@ -3,24 +3,24 @@
   <div class="card-container">
 
     <!-- Composant de chargement visible pendant le fetch -->
-    <LoadingSpinner :visible="loading" />
+    <LoadingSpinner v-bind:visible="loading" />
 
     <!-- Boucle sur chaque carte issue de l'API -->
     <GenericCard
         v-for="card in cardsNapoleon"
-        :key="card.id"
-        :title="card.title"
-        :year="card.year"
-        :image="card.image"
-        @action="handleAction"
+        v-bind:key="card.id"
+        v-bind:title="card.title"
+        v-bind:year="card.year"
+        v-bind:image="card.image"
+        v-on:action="handleAction"
     >
       <!-- Slot principal de contenu -->
-      <template #default>
+      <template v-slot:default>
         <!-- Description dynamique avec scroll si showSituation est actif -->
-        <div class="card-description" :class="{ scrollable: card.showSituation }">
+        <div class="card-description" v-bind:class="{ scrollable: card.showSituation }">
 
           <!-- Affiche les sections tronquées ou complètes selon l'état -->
-          <div v-for="section in getTruncatedSections(card)" :key="section.title">
+          <div v-for="section in getTruncatedSections(card)" v-bind:key="section.title">
             <h4>{{ section.title }}</h4>
             <p>{{ section.content }}</p>
           </div>
@@ -32,10 +32,10 @@
       </template>
 
       <!-- Slot pour les actions personnalisées -->
-      <template #actions>
+      <template v-slot:actions>
         <!-- Bouton pour afficher ou masquer la situation -->
-        <button @click="toggleSituation(card)">
-          <i :class="card.showSituation ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
+        <button v-on:click="toggleSituation(card)">
+          <i v-bind:class="card.showSituation ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
         </button>
       </template>
     </GenericCard>
