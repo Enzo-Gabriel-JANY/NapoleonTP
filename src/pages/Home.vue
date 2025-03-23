@@ -55,8 +55,8 @@
     >
       <template v-slot:default>
         <!-- Description dynamique des cartes avec contenu conditionnel -->
-          <div class="card-description">
-            <div v-for="section in getTruncatedSections(card)" :key="section.title">
+        <div class="card-description" :class="{ 'scrollable': card.showSituation }">
+        <div v-for="section in getTruncatedSections(card)" :key="section.title">
               <h4>{{ section.title }}</h4>
               <p>{{ section.content }}</p>
             </div>
@@ -240,15 +240,16 @@ const getTruncatedSections = (card) => {
 /* Contenu textuel dynamique dans les cartes (provenant des slots) */
 .card-description {
   text-align: justify; /* Justifie le texte pour une meilleure lisibilité */
-  font-size: 1rem; /* Taille standard pour le texte */
+  font-size: 1rem;
   line-height: 1.6; /* Ajoute un espace vertical entre les lignes */
+  font-family: Arial, sans-serif;
 }
 
 /* Titres spécifiques à chaque section de description */
 .card-description h4 {
   font-weight: bold; /* Rendre les titres plus visibles en gras */
   margin: 1rem 0 0.5rem; /* Ajoute un espace avant et après le titre */
-  font-size: 1.1rem; /* Taille légèrement augmentée pour différencier les titres du texte */
+  font-size: 1rem; /* Taille légèrement augmentée pour différencier les titres du texte */
   color: #333; /* Couleur sombre pour les titres */
 }
 
@@ -257,5 +258,24 @@ const getTruncatedSections = (card) => {
   margin-bottom: 1rem; /* Ajoute un espace après chaque paragraphe */
   color: #555; /* Couleur légèrement grisée pour un meilleur contraste */
 }
+
+/* Description scrollable quand showSituation est actif */
+.scrollable {
+  max-height: 430px; /* hauteur fixe visible (~900 caractères selon mise en page) */
+  overflow-y: auto; /* active l'ascenseur vertical */
+  padding-right: 0.5rem; /* évite que le scroll cache du texte */
+  scrollbar-width: thin; /* Firefox */
+}
+
+/* Pour Webkit (Chrome, Edge, Safari...) */
+.scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: #bbb;
+  border-radius: 8px;
+}
+
 
 </style>
