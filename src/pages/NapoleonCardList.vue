@@ -37,9 +37,21 @@
         <button v-on:click="toggleSituation(card)">
           <i v-bind:class="card.showSituation ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
         </button>
+        <button @click="selectedCardForEdit = card">
+          <i class="mdi mdi-pencil"></i> Éditer
+        </button>
+
       </template>
     </GenericCard>
   </div>
+
+  <EditBattleModal
+      v-if="selectedCardForEdit"
+      :card="selectedCardForEdit"
+      @close="selectedCardForEdit = null"
+      @save="updateCard"
+  />
+
 </template>
 
 <script setup>
@@ -49,6 +61,8 @@ import { ref, onMounted } from 'vue';
 // Composants utilisés
 import GenericCard from '@/components/GenericCard.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
+import EditBattleModal from '@/components/EditBattleModal.vue';
+
 
 // Import des icônes Material Design (pour les yeux)
 import '@mdi/font/css/materialdesignicons.min.css';
@@ -91,6 +105,52 @@ async function fetchCards() {
 function handleActionNapoleon(id) {
   alert(`Action déclenchée pour la carte ID : ${id}`);
 }
+
+
+const selectedCardForEdit = ref(null); // carte sélectionnée
+
+async function updateCard(updatedCard) {
+  try {
+    // Prépare l'objet pour l'API (nom, annee, etc.)
+    const apiCard = {
+      id: updatedCard.id,
+      nom: updatedCard.title,
+      annee: updatedCard.year,
+      lieu: updatedCard.lieu,
+      forces: updatedCard.forces,
+      pertes: updatedCard.pertes,
+      situation: updatedCard.situation,
+    };
+
+    // Envoie la mise à jour au serveur
+    const response = await fetch(`http://localhost:5000/bataille/${apiCard.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(apiCard),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur API lors de la sauvegarde');
+    }
+
+    // Met à jour localement l’objet dans le tableau
+    const index = cardsNapoleon.value.findIndex(c => c.id === updatedCard.id);
+    if (index !== -1) {
+      Object.assign(cardsNapoleon.value[index], updatedCard);
+      cardsNapoleon.value[index].showSituation = false;
+    }
+
+    // Ferme la modale
+    selectedCardForEdit.value = null;
+
+  } catch (error) {
+    console.error('Erreur mise à jour serveur :', error);
+    alert('Une erreur est survenue lors de la sauvegarde.');
+  }
+}
+
+
+
 
 // Affiche ou masque la section "situation" (et ferme les autres cartes)
 function toggleSituation(card) {
