@@ -10,9 +10,9 @@
       <!-- Formulaire d'édition -->
       <!-- v-on:submit.prevent : empêche l'envoi natif HTML -->
       <!-- v-on:keydown.enter.prevent : empêche la touche "Entrée" de soumettre le formulaire -->
-      <form v-on:submit.prevent="submit" v-on:keydown.enter.prevent>
+      <form @submit.prevent="submit" @keydown.enter="handleEnter">
 
-        <!-- Ligne 1 : Titre et Année -->
+      <!-- Ligne 1 : Titre et Année -->
         <div class="form-row">
           <div class="form-group">
             <label for="title">Titre :</label>
@@ -107,6 +107,15 @@ function openFileDialog() {
     hiddenFileInput.value.click();
   }
 }
+
+// Permettre la touche entré uniquement pour le retour à la ligne
+function handleEnter(event) {
+  const tag = event.target.tagName.toLowerCase();
+  if (tag !== 'textarea') {
+    event.preventDefault();
+  }
+}
+
 
 // Lorsqu’un fichier est sélectionné
 // → met à jour le nom affiché et lit le fichier en base64
