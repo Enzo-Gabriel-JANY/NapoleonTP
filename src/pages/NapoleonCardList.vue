@@ -11,7 +11,7 @@
         v-bind:key="card.id"
         v-bind:title="card.title"
         v-bind:year="card.year"
-        v-bind:image="card.image"
+        v-bind:image="getCardImage(card)"
         v-on:action="handleAction"
     >
       <!-- Slot principal de contenu -->
@@ -106,6 +106,13 @@ function handleActionNapoleon(id) {
   alert(`Action déclenchée pour la carte ID : ${id}`);
 }
 
+function getCardImage(card) {
+  // Si l'image commence déjà par data:image, on la retourne telle quelle
+  if (card.image?.startsWith('data:image')) return card.image;
+
+  // Sinon, on ajoute le préfixe pour que <img> puisse l'afficher
+  return `data:image/png;base64,${card.image}`;
+}
 
 const selectedCardForEdit = ref(null); // carte sélectionnée
 
@@ -120,6 +127,7 @@ async function updateCard(updatedCard) {
       forces: updatedCard.forces,
       pertes: updatedCard.pertes,
       situation: updatedCard.situation,
+      image: updatedCard.image
     };
 
     // Envoie la mise à jour au serveur
