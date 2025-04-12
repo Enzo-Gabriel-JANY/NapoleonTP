@@ -5,6 +5,9 @@
     <!-- Composant de chargement visible pendant le fetch -->
     <LoadingSpinner v-bind:visible="loading" />
 
+    <!-- Bouton pour ajouter une nouvelle bataille -->
+    <button v-on:click="showAddModal = true">➕ Ajouter une bataille</button>
+
     <!-- Boucle sur chaque carte issue de l'API -->
     <GenericCard
         v-for="card in cardsNapoleon"
@@ -44,12 +47,16 @@
       </template>
     </GenericCard>
   </div>
-
+  <AddBattleModal
+      v-if="showAddModal"
+      @close="showAddModal = false"
+      @add="addCard"
+  />
   <EditBattleModal
       v-if="selectedCardForEdit"
-      :card="selectedCardForEdit"
-      @close="selectedCardForEdit = null"
-      @save="updateCard"
+      v-bind:card="selectedCardForEdit"
+      v-on:close="selectedCardForEdit = null"
+      v-on:save="updateCard"
   />
 
 </template>
@@ -62,6 +69,7 @@ import { ref, onMounted } from 'vue';
 import GenericCard from '@/components/GenericCard.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import EditBattleModal from '@/components/EditBattleModal.vue';
+import AddBattleModal from "@/components/AddBattleModal.vue";
 
 
 // Import des icônes Material Design (pour les yeux)
@@ -113,6 +121,44 @@ function getCardImage(card) {
   // Sinon, on ajoute le préfixe pour que <img> puisse l'afficher
   return `data:image/png;base64,${card.image}`;
 }
+
+const showAddModal = ref(false);
+
+async function addCard(newCard) {
+  try {
+
+    const apiCard = {
+      nom: newCard.title,
+      annee: newCard.year,
+      lieu: newCard.lieu,
+      forces: newCard.forces,
+      pertes: newCard.pertes,
+      situation: newCard.situation,
+      image: newCard.image
+    };
+
+    const response = await fetch('http://localhost:5000/bataille', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(apiCard),
+    });
+
+    if (!response.ok) throw new Error('Erreur lors de l’ajout');
+
+    // Ajoute localement (avec le même formatage que fetchCards)
+    cardsNapoleon.value.unshift({
+      ...newCard,
+      showSituation: false
+    });
+  } catch (e) {
+    console.error('Erreur ajout carte:', e);
+  } finally {
+    showAddModal.value = false;
+  }
+}
+
 
 const selectedCardForEdit = ref(null); // carte sélectionnée
 
