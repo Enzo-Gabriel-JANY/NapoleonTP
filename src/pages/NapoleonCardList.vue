@@ -40,9 +40,17 @@
         <button v-on:click="toggleSituation(card)">
           <i v-bind:class="card.showSituation ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
         </button>
+
+        <!-- Vouton pour modifier une bataille -->
         <button @click="selectedCardForEdit = card">
-          <i class="mdi mdi-pencil"></i> Éditer
+          <i class="mdi mdi-pencil"></i>
         </button>
+
+        <!-- Vouton pour supprimer une bataille -->
+        <button @click="deleteCard(card)">
+          <i class="mdi mdi-delete"></i>
+        </button>
+
 
       </template>
     </GenericCard>
@@ -58,18 +66,28 @@
       v-on:close="selectedCardForEdit = null"
       v-on:save="updateCard"
   />
+  <ConfirmModal
+      v-if="cardToDelete"
+      :message="messageHtml"
+      @cancel="cardToDelete = null"
+      @confirm="confirmDelete"
+  />
+
+
+
 
 </template>
 
 <script setup>
 // Importations des outils Vue
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 
 // Composants utilisés
 import GenericCard from '@/components/GenericCard.vue';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import EditBattleModal from '@/components/EditBattleModal.vue';
 import AddBattleModal from "@/components/AddBattleModal.vue";
+import ConfirmModal from "@/components/ConfirmModal.vue";
 
 
 // Import des icônes Material Design (pour les yeux)
@@ -203,8 +221,43 @@ async function updateCard(updatedCard) {
   }
 }
 
+const cardToDelete = ref(null);
+
+function deleteCard(card) {
+  cardToDelete.value = card;
+}
+
+const messageHtml = computed(() => {
+  if (!cardToDelete.value) return '';
+  const title = cardToDelete.value.title;
+  const year = cardToDelete.value.year;
+
+  return `
+    Êtes-vous sûr de vouloir supprimer la bataille :<br>
+    <strong>${title} - ${year}</strong> ?<br><br>
+    Cette action est irréversible.
+  `;
+});
 
 
+async function confirmDelete() {
+  if (!cardToDelete.value) return;
+
+  try {
+    const response = await fetch(`http://localhost:5000/bataille/${cardToDelete.value.id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) throw new Error('Suppression échouée');
+
+    cardsNapoleon.value = cardsNapoleon.value.filter(c => c.id !== cardToDelete.value.id);
+  } catch (e) {
+    alert('Erreur lors de la suppression.');
+    console.error(e);
+  } finally {
+    cardToDelete.value = null;
+  }
+}
 
 // Affiche ou masque la section "situation" (et ferme les autres cartes)
 function toggleSituation(card) {
@@ -300,4 +353,35 @@ function handleAction(payload) {
   background-color: #bbb;
   border-radius: 8px;
 }
+
+/* Boutons insérés via les slots */
+button {
+  padding: 0.8rem 0.8rem; /* Ajoute de l'espace interne pour une apparence homogène */
+  border: 1px solid #ccc; /* Bordure grise légère */
+  border-radius: 100px; /* Coins légèrement arrondis */
+  background: #f8f8f8; /* Couleur de fond neutre */
+  color: #333; /* Couleur du texte sombre */
+  font-weight: 600; /* Texte légèrement en gras */
+  font-size: 1rem; /* Taille standard du texte */
+  cursor: pointer; /* Change le curseur en pointeur (main) pour indiquer une action */
+  transition: background 0.3s ease, transform 0.2s ease; /* Transition douce pour les interactions */
+  white-space: nowrap; /* Empêche les boutons de s'étirer ou de couper leur texte */
+  width: auto; /* Ajuste la largeur au contenu */
+  min-width: fit-content; /* Garde une largeur minimale suffisante pour s'adapter au contenu */
+  text-align: center; /* Centre le texte dans le bouton */
+}
+
+/* Effet au survol des boutons */
+button:hover{
+  background: #e0e0e0; /* Couleur légèrement plus sombre au survol */
+  transform: translateY(-2px); /* Soulève légèrement le bouton */
+}
+
+/* Effet lorsque le bouton est cliqué */
+button:active {
+  background: #d6d6d6; /* Couleur encore plus sombre lorsqu'il est cliqué */
+  transform: translateY(1px); /* Réduit légèrement le bouton */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Ajoute un effet d'enfoncement */
+}
+
 </style>

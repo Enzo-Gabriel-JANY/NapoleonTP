@@ -190,4 +190,34 @@ textarea {
   justify-content: flex-end;
   gap: 1rem;
 }
+
+/* Boutons insérés via les slots */
+.actions ::v-deep(button) {
+  padding: 0.8rem 0.8rem; /* Ajoute de l'espace interne pour une apparence homogène */
+  border: 1px solid #ccc; /* Bordure grise légère */
+  border-radius: 100px; /* Coins légèrement arrondis */
+  background: #f8f8f8; /* Couleur de fond neutre */
+  color: #333; /* Couleur du texte sombre */
+  font-weight: 600; /* Texte légèrement en gras */
+  font-size: 1rem; /* Taille standard du texte */
+  cursor: pointer; /* Change le curseur en pointeur (main) pour indiquer une action */
+  transition: background 0.3s ease, transform 0.2s ease; /* Transition douce pour les interactions */
+  white-space: nowrap; /* Empêche les boutons de s'étirer ou de couper leur texte */
+  width: auto; /* Ajuste la largeur au contenu */
+  min-width: fit-content; /* Garde une largeur minimale suffisante pour s'adapter au contenu */
+  text-align: center; /* Centre le texte dans le bouton */
+}
+
+/* Effet au survol des boutons */
+.actions ::v-deep(button:hover) {
+  background: #e0e0e0; /* Couleur légèrement plus sombre au survol */
+  transform: translateY(-2px); /* Soulève légèrement le bouton */
+}
+
+/* Effet lorsque le bouton est cliqué */
+.actions ::v-deep(button:active) {
+  background: #d6d6d6; /* Couleur encore plus sombre lorsqu'il est cliqué */
+  transform: translateY(1px); /* Réduit légèrement le bouton */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Ajoute un effet d'enfoncement */
+}
 </style>
