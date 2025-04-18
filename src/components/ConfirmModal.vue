@@ -6,7 +6,9 @@
       <h2>Supression de bataille</h2>
 
       <!-- Message principal -->
-      <p class="message" v-html="message"></p>
+      <p class="message">Êtes-vous sûr de vouloir supprimer la bataille :<br>
+        <strong>{{batailleSelectionne.title}} - {{batailleSelectionne.year}}</strong> ?<br><br>
+        Cette action est irréversible.</p>
 
       <!-- Boutons -->
       <div class="actions">
@@ -19,7 +21,9 @@
 
 <script setup>
 const props = defineProps({
-  message: { type: String, default: 'Êtes-vous sûr de vouloir continuer ?' }
+  batailleSelectionne:{
+    type: Object
+  }
 });
 
 const emit = defineEmits(['cancel', 'confirm']);
@@ -66,6 +70,10 @@ h2 {
   color: #555;
 }
 
+.message strong{
+  font-weight: bold;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -97,11 +105,6 @@ h2 {
 
 .actions .cancel:hover {
   background: #e0e0e0;
-}
-
-.message strong::v-deep {
-  font-weight: bold !important;
-  color: #000;
 }
 
 </style>

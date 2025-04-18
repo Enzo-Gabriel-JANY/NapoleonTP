@@ -68,7 +68,7 @@
   />
   <ConfirmModal
       v-if="cardToDelete"
-      :message="messageHtml"
+      v-bind:bataille-selectionne="cardToDelete"
       @cancel="cardToDelete = null"
       @confirm="confirmDelete"
   />
@@ -226,19 +226,6 @@ const cardToDelete = ref(null);
 function deleteCard(card) {
   cardToDelete.value = card;
 }
-
-const messageHtml = computed(() => {
-  if (!cardToDelete.value) return '';
-  const title = cardToDelete.value.title;
-  const year = cardToDelete.value.year;
-
-  return `
-    Êtes-vous sûr de vouloir supprimer la bataille :<br>
-    <strong>${title} - ${year}</strong> ?<br><br>
-    Cette action est irréversible.
-  `;
-});
-
 
 async function confirmDelete() {
   if (!cardToDelete.value) return;
