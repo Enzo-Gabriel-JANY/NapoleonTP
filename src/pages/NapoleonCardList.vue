@@ -5,8 +5,12 @@
     <!-- Composant de chargement, affiché tant que les données sont en cours de récupération -->
     <LoadingSpinner v-bind:visible="loading" />
 
-    <!-- Bouton pour ouvrir la modale d'ajout de bataille -->
-    <button v-on:click="showAddModal = true">➕ Ajouter une bataille</button>
+    <!-- Ligne du haut : recherche à gauche, ajout à droite -->
+    <div class="top-bar">
+      <SearchBar @search="searchCards" />
+      <button @click="showAddModal = true">➕ Ajouter une bataille</button>
+    </div>
+
 
     <!-- Liste des cartes de batailles napoléoniennes -->
     <GenericCard
@@ -92,6 +96,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import EditBattleModal from '@/components/EditBattleModal.vue'
 import AddBattleModal from "@/components/AddBattleModal.vue"
 import ConfirmModal from "@/components/ConfirmModal.vue"
+import SearchBar from "@/components/SearchBar.vue";
 
 // Import de la feuille d’icônes MDI (Material Design Icons)
 import '@mdi/font/css/materialdesignicons.min.css'
@@ -101,6 +106,13 @@ const cardsNapoleon = ref([])
 
 // Indique si les données sont en cours de chargement
 const loading = ref(true)
+
+// Valeur du champ de recherche
+const searchTerm = ref('');
+
+// Liste d'origine (copie complète, pour pouvoir réinitialiser)
+let fullCardList = [];
+
 
 // Appelé automatiquement au montage du composant
 onMounted(fetchCards)
@@ -127,12 +139,38 @@ async function fetchCards() {
           situation: item.situation,
           showSituation: false, // Contrôle local pour chaque carte
         }))
+
+    fullCardList = [...cardsNapoleon.value]; // Garde une copie de la liste complète
+
   } catch (err) {
     console.error('Erreur de chargement :', err)
   } finally {
     loading.value = false
   }
 }
+
+// Filtrage à la demande
+async function searchCards(term) {
+  loading.value = true; // Affiche le spinner
+
+  await new Promise(resolve => setTimeout(resolve, 300)); // Simule un délai
+
+  const searchTerm = term.trim().toLowerCase();
+
+  if (!searchTerm) {
+    cardsNapoleon.value = [...fullCardList];
+  } else {
+    cardsNapoleon.value = fullCardList.filter(card => {
+      const title = card.title.toLowerCase();
+      const year = String(card.year);
+      return title.includes(searchTerm) || year.includes(searchTerm);
+    });
+  }
+
+  loading.value = false; // Cache le spinner
+}
+
+
 
 // Convertit une image en base64 si besoin
 function getCardImage(card) {
@@ -364,5 +402,15 @@ button:active {
   background: #d6d6d6;
   transform: translateY(1px);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Barre supérieure contenant la recherche à gauche et le bouton à droite */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1500px;         /* même largeur que les cards */
+  margin: 1rem auto;        /* centré horizontalement */
 }
 </style>
