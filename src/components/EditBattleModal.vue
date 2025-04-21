@@ -1,30 +1,50 @@
 <template>
-  <!-- Fond sombre qui couvre toute la page -->
-  <!-- v-on:click.self = ferme la modale si on clique en dehors du bloc blanc -->
-  <div class="modal-backdrop" v-on:click.self="close">
+  <!-- Fond sombre cliquable : ferme la modale si on clique en dehors -->
+  <div class="modal-backdrop" @click.self="close">
 
-    <!-- Bloc blanc centré : c’est le contenu de la modale -->
+    <!-- Bloc principal de la modale -->
     <div class="modal">
       <h2>Éditer la bataille</h2>
 
       <!-- Formulaire d'édition -->
-      <!-- v-on:submit.prevent : empêche l'envoi natif HTML -->
-      <!-- v-on:keydown.enter.prevent : empêche la touche "Entrée" de soumettre le formulaire -->
+      <!-- .prevent : empêche l'envoi HTML classique -->
+      <!-- .enter : empêche la touche "Entrée" sauf dans un textarea -->
       <form @submit.prevent="submit" @keydown.enter="handleEnter">
 
-      <!-- Ligne 1 : Titre et Année -->
+        <!-- Ligne 1 : Titre et Année -->
         <div class="form-row">
+          <!-- Champ Titre -->
           <div class="form-group">
             <label for="title">Titre :</label>
-            <input id="title" v-model="localCard.title" type="text" />
+            <input
+                id="title"
+                v-model="localCard.title"
+                type="text"
+                :class="{ 'invalid': showError && !localCard.title.trim() }"
+            />
           </div>
+
+          <!-- Champ Année -->
           <div class="form-group">
             <label for="year">Année :</label>
-            <input id="year" v-model.number="localCard.year" type="number" />
+            <input
+                id="year"
+                v-model.number="localCard.year"
+                type="number"
+                :class="{ 'invalid': (showError && !localCard.year) || yearError }"
+            />
           </div>
         </div>
 
-        <!-- Ligne 2 : Lieu et Forces -->
+        <!-- Ligne 2 : Checkbox victoire -->
+        <div class="form-row">
+          <div class="checkbox-group">
+            <label for="victoire">Victoire napoléonienne :</label>
+            <input type="checkbox" id="victoire" v-model="localCard.victory" />
+          </div>
+        </div>
+
+        <!-- Ligne 3 : Lieu et Forces -->
         <div class="form-row">
           <div class="form-group">
             <label for="lieu">Lieu :</label>
@@ -36,139 +56,155 @@
           </div>
         </div>
 
-        <!-- Ligne 3 : Pertes -->
+        <!-- Ligne 4 : Pertes -->
         <label for="pertes">Pertes :</label>
         <textarea id="pertes" v-model="localCard.pertes" rows="4" />
 
-        <!-- Ligne 4 : Situation -->
+        <!-- Ligne 5 : Situation -->
         <label for="situation">Situation :</label>
         <textarea id="situation" v-model="localCard.situation" rows="5" />
 
-        <!-- Ligne 5 : Champ d’image personnalisé -->
+        <!-- Ligne 6 : Image (champ simulé + input caché) -->
         <label for="image">Image :</label>
-
-        <!-- Champ texte simulant une sélection de fichier -->
-        <!-- Quand on clique dessus, on déclenche un input file invisible -->
         <input
             id="image"
             type="text"
             readonly
             v-model="fileName"
-            v-on:click="openFileDialog"
+            @click="openFileDialog"
         />
-
-        <!-- Input file masqué, utilisé pour sélectionner une image -->
         <input
             ref="hiddenFileInput"
             type="file"
             accept="image/*"
-            v-on:change="updateFileName"
+            @change="updateFileName"
             style="display: none"
         />
 
-        <!-- Boutons de validation -->
+        <!-- Zone des boutons d'action -->
         <div class="actions">
-          <button type="submit">Enregistrer</button>
-          <button type="button" v-on:click="close">Annuler</button>
+          <!-- Message si titre vide -->
+          <p v-if="showError" class="error-message">
+            Le champ <strong>titre</strong> est obligatoire.
+          </p>
+
+          <!-- Message si année hors limites -->
+          <p v-if="yearError" class="error-message">
+            L’année doit être comprise entre 1769 et 1815.<br />
+            C’est compliqué de faire une bataille napoléonienne sans Napoléon !
+          </p>
+
+          <!-- Boutons Annuler et Enregistrer -->
+          <button type="button" class="cancel-button" @click="close">Annuler</button>
+          <button type="submit" class="save-button">Enregistrer</button>
         </div>
       </form>
     </div>
   </div>
 </template>
 
-
 <script setup>
-// Imports Vue
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, watch } from 'vue'
 
-// Référence à l'input file masqué (pour pouvoir déclencher son clic depuis un autre champ)
-const hiddenFileInput = ref(null);
+// Référence à l'input file caché (pour déclencher le dialogue fichier)
+const hiddenFileInput = ref(null)
 
-// Déclaration des props : on reçoit une carte depuis le parent
+// Flags pour afficher les erreurs si titre ou année invalides
+const showError = ref(false)
+const yearError = ref(false)
+
+// Props reçue du parent : la carte à éditer
 const props = defineProps({
   card: Object
-});
+})
 
-// Affiche le nom du fichier (ou un label fixe si une image est déjà présente)
-const fileName = ref(props.card.image ? 'ImageNapoleon.img' : '');
+// Événements envoyés au parent : fermeture et sauvegarde
+const emit = defineEmits(['close', 'save'])
 
-// Déclaration des événements que la modale peut envoyer au parent
-const emit = defineEmits(['close', 'save']);
+// Nom du fichier image à afficher dans le champ texte
+const fileName = ref(props.card.image ? 'ImageNapoleon.img' : '')
 
-// Copie locale de la carte pour éviter de modifier directement la prop
+// Copie locale de la carte (on ne modifie pas directement la prop)
 const localCard = reactive({
-  ...props.card, // copie toutes les propriétés
-  image: props.card.image || '' // s’assure que image est initialisée
-});
+  ...props.card,
+  image: props.card.image || ''
+})
 
-// Lorsqu’on clique sur le champ texte image, on déclenche l’input file caché
+// Déclenche l'ouverture de l'input file invisible
 function openFileDialog() {
   if (hiddenFileInput.value) {
-    hiddenFileInput.value.click();
+    hiddenFileInput.value.click()
   }
 }
 
-// Permettre la touche entré uniquement pour le retour à la ligne
+// Bloque la touche Entrée sauf dans les textarea
 function handleEnter(event) {
-  const tag = event.target.tagName.toLowerCase();
+  const tag = event.target.tagName.toLowerCase()
   if (tag !== 'textarea') {
-    event.preventDefault();
+    event.preventDefault()
   }
 }
 
-
-// Lorsqu’un fichier est sélectionné
-// → met à jour le nom affiché et lit le fichier en base64
+// Lorsque l’utilisateur choisit une image
 function updateFileName(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  const file = event.target.files[0]
+  if (!file) return
 
-  fileName.value = file.name; // nom du fichier dans le champ texte
+  fileName.value = file.name // met à jour le champ texte
 
-  const reader = new FileReader();
-
-  // Quand la lecture est terminée → stocker le base64 complet dans localCard.image
+  const reader = new FileReader()
   reader.onload = function () {
-    localCard.image = reader.result;
-  };
-
-  // Lance la lecture du fichier comme DataURL (data:image/png;base64,...)
-  reader.readAsDataURL(file);
+    localCard.image = reader.result // base64 complet
+  }
+  reader.readAsDataURL(file)
 }
 
-// Si la prop `card` change pendant que la modale est ouverte
-// → synchroniser la copie locale
+// Si les props changent (ex: rechargement de données en live), on synchronise localCard
 watch(() => props.card, (nouvelleCarte) => {
-  Object.assign(localCard, nouvelleCarte);
-  fileName.value = nouvelleCarte.image ? 'Image Napoleon' : '';
-});
+  Object.assign(localCard, nouvelleCarte)
+  fileName.value = nouvelleCarte.image ? 'Image Napoleon' : ''
+})
 
-// Ferme la modale (événement émis vers le parent)
+// Ferme la modale en émettant l’événement "close"
 function close() {
-  emit('close');
+  emit('close')
 }
 
-// Lorsqu’on clique sur "Enregistrer" → nettoie l’image si nécessaire et envoie au parent
+// Envoie les données éditées au parent après validation
 function submit() {
-  const payload = { ...localCard };
+  showError.value = false
+  yearError.value = false
 
-  // Si image est en data:image/... base64 → on enlève le préfixe avant de l’enregistrer
-  if (typeof payload.image === 'string' && payload.image.startsWith('data:image')) {
-    payload.image = payload.image.split(',')[1];
+  // Vérifie que le titre n’est pas vide
+  if (!localCard.title.trim()) {
+    showError.value = true
+    return
   }
 
-  // Envoie la carte modifiée au parent (via @save)
-  emit('save', payload);
-}
+  // Vérifie que l’année est dans la période napoléonienne
+  if (!localCard.year || localCard.year < 1769 || localCard.year > 1815) {
+    yearError.value = true
+    return
+  }
 
+  const payload = { ...localCard }
+
+  // Nettoie l'image : retire le préfixe base64
+  if (typeof payload.image === 'string' && payload.image.startsWith('data:image')) {
+    payload.image = payload.image.split(',')[1]
+  }
+
+  // Envoie les données éditées
+  emit('save', payload)
+}
 </script>
 
 <style scoped>
-/* Fond sombre derrière la modale */
+/* Fond sombre semi-transparent */
 .modal-backdrop {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.5); /* Noir semi-transparent */
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,7 +212,7 @@ function submit() {
   padding: 1rem;
 }
 
-/* Bloc blanc de la modale */
+/* Boîte blanche de la modale */
 .modal {
   background: white;
   padding: 2rem;
@@ -188,7 +224,7 @@ function submit() {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Lignes à deux colonnes */
+/* Ligne contenant plusieurs champs */
 .form-row {
   display: flex;
   gap: 1rem;
@@ -196,20 +232,20 @@ function submit() {
   flex-wrap: wrap;
 }
 
-/* Chaque champ prend la moitié de la largeur au minimum */
+/* Container d’un champ avec min-width */
 .form-group {
   flex: 1;
   min-width: 200px;
 }
 
-/* Labels */
+/* Style des labels */
 label {
   display: block;
   margin-top: 1rem;
   font-weight: bold;
 }
 
-/* Champs texte et zone de texte */
+/* Inputs texte et textareas */
 input,
 textarea {
   width: 100%;
@@ -222,47 +258,75 @@ textarea {
   box-sizing: border-box;
 }
 
-/* Champ image texte : taille réduite */
+/* Limite de largeur pour le champ image (simulé) */
 #image {
   max-width: 200px;
 }
 
-/* Conteneur des boutons */
+/* Boutons en bas du formulaire */
 .actions {
-  margin-top: 1.5rem;
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  margin-top: 1.5rem;
 }
 
-/* Boutons insérés via les slots */
-.actions ::v-deep(button) {
-  padding: 0.8rem 0.8rem; /* Ajoute de l'espace interne pour une apparence homogène */
-  border: 1px solid #ccc; /* Bordure grise légère */
-  border-radius: 100px; /* Coins légèrement arrondis */
-  background: #f8f8f8; /* Couleur de fond neutre */
-  color: #333; /* Couleur du texte sombre */
-  font-weight: 600; /* Texte légèrement en gras */
-  font-size: 1rem; /* Taille standard du texte */
-  cursor: pointer; /* Change le curseur en pointeur (main) pour indiquer une action */
-  transition: background 0.3s ease, transform 0.2s ease; /* Transition douce pour les interactions */
-  white-space: nowrap; /* Empêche les boutons de s'étirer ou de couper leur texte */
-  width: auto; /* Ajuste la largeur au contenu */
-  min-width: fit-content; /* Garde une largeur minimale suffisante pour s'adapter au contenu */
-  text-align: center; /* Centre le texte dans le bouton */
+/* Bouton Annuler */
+button.cancel-button {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+button.cancel-button:hover {
+  background: #e0e0e0;
 }
 
-/* Effet au survol des boutons */
-.actions ::v-deep(button:hover) {
-  background: #e0e0e0; /* Couleur légèrement plus sombre au survol */
-  transform: translateY(-2px); /* Soulève légèrement le bouton */
+/* Bouton Enregistrer */
+button.save-button {
+  background: #4CAF50;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+button.save-button:hover {
+  background: #43a047;
 }
 
-/* Effet lorsque le bouton est cliqué */
-.actions ::v-deep(button:active) {
-  background: #d6d6d6; /* Couleur encore plus sombre lorsqu'il est cliqué */
-  transform: translateY(1px); /* Réduit légèrement le bouton */
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Ajoute un effet d'enfoncement */
+/* Bordure rouge et fond clair si champ invalide */
+.invalid {
+  border: 2px solid #d32f2f;
+  background-color: #fff4f4;
 }
 
+/* Message d'erreur */
+.error-message {
+  color: #d32f2f;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+  margin-right: auto;
+}
+
+/* Hauteur standard pour les boutons */
+button {
+  height: 42px;
+}
+
+/* Alignement de la checkbox */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  white-space: nowrap;
+}
+.checkbox-group label {
+  margin: 0;
+  font-weight: bold;
+  flex-shrink: 0;
+}
 </style>

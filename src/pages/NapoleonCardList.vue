@@ -1,297 +1,292 @@
 <template>
-  <!-- Conteneur principal de toutes les cartes -->
+  <!-- Conteneur principal qui englobe toutes les cartes -->
   <div class="card-container">
 
-    <!-- Composant de chargement visible pendant le fetch -->
+    <!-- Composant de chargement, affiché tant que les données sont en cours de récupération -->
     <LoadingSpinner v-bind:visible="loading" />
 
-    <!-- Bouton pour ajouter une nouvelle bataille -->
+    <!-- Bouton pour ouvrir la modale d'ajout de bataille -->
     <button v-on:click="showAddModal = true">➕ Ajouter une bataille</button>
 
-    <!-- Boucle sur chaque carte issue de l'API -->
+    <!-- Liste des cartes de batailles napoléoniennes -->
     <GenericCard
         v-for="card in cardsNapoleon"
-        v-bind:key="card.id"
-        v-bind:title="card.title"
-        v-bind:year="card.year"
-        v-bind:image="getCardImage(card)"
-        v-on:action="handleAction"
+    v-bind:key="card.id"
+    v-bind:title="card.title"
+    v-bind:year="card.year"
+    v-bind:image="getCardImage(card)"
+    v-on:action="handleAction"
     >
-      <!-- Slot principal de contenu -->
-      <template v-slot:default>
-        <!-- Description dynamique avec scroll si showSituation est actif -->
-        <div class="card-description" v-bind:class="{ scrollable: card.showSituation }">
 
-          <!-- Affiche les sections tronquées ou complètes selon l'état -->
-          <div v-for="section in getTruncatedSections(card)" v-bind:key="section.title">
-            <h4>{{ section.title }}</h4>
-            <p>{{ section.content }}</p>
-          </div>
+    <!-- Contenu principal de chaque carte (slot par défaut) -->
+    <template v-slot:default>
+      <!-- Contenu textuel, avec scroll si showSituation est activé -->
+      <div class="card-description" v-bind:class="{ scrollable: card.showSituation }">
 
-          <!-- Affiche la "Situation" uniquement si showSituation est true -->
-          <h4 v-if="card.showSituation">Situation</h4>
-          <p v-if="card.showSituation">{{ card.situation }}</p>
+        <!-- Sections résumées : lieu, pertes, forces -->
+        <div v-for="section in getTruncatedSections(card)" v-bind:key="section.title">
+          <h4>{{ section.title }}</h4>
+          <p>{{ section.content }}</p>
         </div>
-      </template>
 
-      <!-- Slot pour les actions personnalisées -->
-      <template v-slot:actions>
-        <!-- Bouton pour afficher ou masquer la situation -->
-        <button v-on:click="toggleSituation(card)">
-          <i v-bind:class="card.showSituation ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
-        </button>
+        <!-- Affiche la situation complète uniquement si activée -->
+        <h4 v-if="card.showSituation">Situation</h4>
+        <p v-if="card.showSituation">{{ card.situation }}</p>
+      </div>
+    </template>
 
-        <!-- Vouton pour modifier une bataille -->
-        <button @click="selectedCardForEdit = card">
-          <i class="mdi mdi-pencil"></i>
-        </button>
+    <!-- Actions affichées en bas de la carte -->
+    <template v-slot:actions>
+      <!-- Bouton pour afficher/masquer la situation -->
+      <button v-on:click="toggleSituation(card)"
+              :title="card.showSituation ? 'Masquer la situation' : 'Afficher la situation'">
+        <i :class="card.showSituation ? 'mdi mdi-eye-off' : 'mdi mdi-eye'"></i>
+      </button>
 
-        <!-- Vouton pour supprimer une bataille -->
-        <button @click="deleteCard(card)">
-          <i class="mdi mdi-delete"></i>
-        </button>
+      <!-- Bouton pour ouvrir la modale de modification -->
+      <button @click="selectedCardForEdit = card"
+              title="Modifier la bataille">
+        <i class="mdi mdi-pencil"></i>
+      </button>
 
-
-      </template>
+      <!-- Bouton pour demander la suppression (ouvre une confirmation) -->
+      <button @click="deleteCard(card)"
+              title="Supprimer la bataille">
+        <i class="mdi mdi-delete"></i>
+      </button>
+    </template>
     </GenericCard>
   </div>
+
+  <!-- Modale pour ajouter une nouvelle bataille -->
   <AddBattleModal
       v-if="showAddModal"
       @close="showAddModal = false"
       @add="addCard"
   />
+
+  <!-- Modale pour modifier une bataille existante -->
   <EditBattleModal
       v-if="selectedCardForEdit"
       v-bind:card="selectedCardForEdit"
       v-on:close="selectedCardForEdit = null"
       v-on:save="updateCard"
   />
+
+  <!-- Modale de confirmation pour supprimer une carte -->
   <ConfirmModal
       v-if="cardToDelete"
       v-bind:bataille-selectionne="cardToDelete"
       @cancel="cardToDelete = null"
       @confirm="confirmDelete"
   />
-
-
-
-
 </template>
 
 <script setup>
-// Importations des outils Vue
-import { ref, onMounted, computed } from 'vue';
+// Import des fonctions de base de Vue
+import { ref, onMounted, computed } from 'vue'
 
-// Composants utilisés
-import GenericCard from '@/components/GenericCard.vue';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
-import EditBattleModal from '@/components/EditBattleModal.vue';
-import AddBattleModal from "@/components/AddBattleModal.vue";
-import ConfirmModal from "@/components/ConfirmModal.vue";
+// Import des composants utilisés dans la page
+import GenericCard from '@/components/GenericCard.vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import EditBattleModal from '@/components/EditBattleModal.vue'
+import AddBattleModal from "@/components/AddBattleModal.vue"
+import ConfirmModal from "@/components/ConfirmModal.vue"
 
+// Import de la feuille d’icônes MDI (Material Design Icons)
+import '@mdi/font/css/materialdesignicons.min.css'
 
-// Import des icônes Material Design (pour les yeux)
-import '@mdi/font/css/materialdesignicons.min.css';
+// État contenant les cartes chargées depuis l'API
+const cardsNapoleon = ref([])
 
-// État local contenant les cartes de l'API
-const cardsNapoleon = ref([]);
+// Indique si les données sont en cours de chargement
+const loading = ref(true)
 
-// État de chargement (pour afficher le spinner)
-const loading = ref(true);
+// Appelé automatiquement au montage du composant
+onMounted(fetchCards)
 
-// Hook monté pour lancer la récupération des données au chargement du composant
-onMounted(fetchCards);
-
-// Appelle l'API pour récupérer les cartes (batailles fictives)
+// Récupère toutes les batailles depuis l'API, les filtre et les trie
 async function fetchCards() {
   try {
-    const response = await fetch('http://localhost:5000/bataille');
-    const data = await response.json();
+    const response = await fetch('http://localhost:5000/bataille')
+    const data = await response.json()
 
-    // Formate les données reçues pour les rendre compatibles avec GenericCard
-    cardsNapoleon.value = data.map((item) => ({
-      id: item.id,
-      title: item.nom,
-      year: item.annee,
-      image: `data:image/jpeg;base64,${item.image}`,
-      lieu: item.lieu,
-      forces: item.forces,
-      pertes: item.pertes,
-      situation: item.situation,
-      showSituation: false, // état local pour l'affichage de la situation
-    }));
+    // Filtre les batailles victorieuses et trie par année croissante
+    cardsNapoleon.value = data
+        .filter(item => item.victoire === true)
+        .sort((a, b) => a.annee - b.annee)
+        .map((item) => ({
+          id: item.id,
+          title: item.nom,
+          year: item.annee,
+          victory: item.victoire,
+          image: `data:image/jpeg;base64,${item.image}`,
+          lieu: item.lieu,
+          forces: item.forces,
+          pertes: item.pertes,
+          situation: item.situation,
+          showSituation: false, // Contrôle local pour chaque carte
+        }))
   } catch (err) {
-    console.error('Erreur de chargement :', err);
+    console.error('Erreur de chargement :', err)
   } finally {
-    loading.value = false; // fin du chargement
+    loading.value = false
   }
 }
 
-// Récupération de l'id d'une card
-function handleActionNapoleon(id) {
-  alert(`Action déclenchée pour la carte ID : ${id}`);
-}
-
+// Convertit une image en base64 si besoin
 function getCardImage(card) {
-  // Si l'image commence déjà par data:image, on la retourne telle quelle
-  if (card.image?.startsWith('data:image')) return card.image;
-
-  // Sinon, on ajoute le préfixe pour que <img> puisse l'afficher
-  return `data:image/png;base64,${card.image}`;
+  if (card.image?.startsWith('data:image')) return card.image
+  return `data:image/png;base64,${card.image}`
 }
 
-const showAddModal = ref(false);
+// État de la modale d'ajout
+const showAddModal = ref(false)
 
+// Ajoute une nouvelle bataille (appel API + rechargement)
 async function addCard(newCard) {
+  loading.value = true; //  démarrage du spinner
   try {
-
     const apiCard = {
       nom: newCard.title,
       annee: newCard.year,
+      victoire: newCard.victory,
       lieu: newCard.lieu,
       forces: newCard.forces,
       pertes: newCard.pertes,
       situation: newCard.situation,
       image: newCard.image
-    };
+    }
 
     const response = await fetch('http://localhost:5000/bataille', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(apiCard),
-    });
+    })
 
-    if (!response.ok) throw new Error('Erreur lors de l’ajout');
+    if (!response.ok) throw new Error('Erreur lors de l’ajout')
 
-    // Ajoute localement (avec le même formatage que fetchCards)
-    cardsNapoleon.value.unshift({
-      ...newCard,
-      showSituation: false
-    });
+    // Recharge les cartes depuis le serveur
+    await fetchCards()
   } catch (e) {
-    console.error('Erreur ajout carte:', e);
+    console.error('Erreur ajout carte:', e)
   } finally {
-    showAddModal.value = false;
+    showAddModal.value = false
   }
 }
 
+// État : carte actuellement en édition
+const selectedCardForEdit = ref(null)
 
-const selectedCardForEdit = ref(null); // carte sélectionnée
-
+// Met à jour une carte après édition (PUT + actualisation locale)
 async function updateCard(updatedCard) {
   try {
-    // Prépare l'objet pour l'API (nom, annee, etc.)
     const apiCard = {
       id: updatedCard.id,
       nom: updatedCard.title,
       annee: updatedCard.year,
+      victoire: updatedCard.victory,
       lieu: updatedCard.lieu,
       forces: updatedCard.forces,
       pertes: updatedCard.pertes,
       situation: updatedCard.situation,
       image: updatedCard.image
-    };
+    }
 
-    // Envoie la mise à jour au serveur
     const response = await fetch(`http://localhost:5000/bataille/${apiCard.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(apiCard),
-    });
+    })
 
-    if (!response.ok) {
-      throw new Error('Erreur API lors de la sauvegarde');
-    }
+    if (!response.ok) throw new Error('Erreur API lors de la sauvegarde')
 
-    // Met à jour localement l’objet dans le tableau
-    const index = cardsNapoleon.value.findIndex(c => c.id === updatedCard.id);
+    // Met à jour localement la carte modifiée
+    const index = cardsNapoleon.value.findIndex(c => c.id === updatedCard.id)
     if (index !== -1) {
-      Object.assign(cardsNapoleon.value[index], updatedCard);
-      cardsNapoleon.value[index].showSituation = false;
+      Object.assign(cardsNapoleon.value[index], updatedCard)
+      cardsNapoleon.value[index].showSituation = false
     }
 
-    // Ferme la modale
-    selectedCardForEdit.value = null;
-
+    selectedCardForEdit.value = null
   } catch (error) {
-    console.error('Erreur mise à jour serveur :', error);
-    alert('Une erreur est survenue lors de la sauvegarde.');
+    console.error('Erreur mise à jour serveur :', error)
+    alert('Une erreur est survenue lors de la sauvegarde.')
   }
 }
 
-const cardToDelete = ref(null);
+// État : carte en attente de suppression
+const cardToDelete = ref(null)
 
+// Prépare la suppression d'une carte (ouvre la modale)
 function deleteCard(card) {
-  cardToDelete.value = card;
+  cardToDelete.value = card
 }
 
+// Confirme la suppression d’une carte (DELETE + retrait local)
 async function confirmDelete() {
-  if (!cardToDelete.value) return;
+  if (!cardToDelete.value) return
 
   try {
     const response = await fetch(`http://localhost:5000/bataille/${cardToDelete.value.id}`, {
       method: 'DELETE',
-    });
+    })
 
-    if (!response.ok) throw new Error('Suppression échouée');
+    if (!response.ok) throw new Error('Suppression échouée')
 
-    cardsNapoleon.value = cardsNapoleon.value.filter(c => c.id !== cardToDelete.value.id);
+    cardsNapoleon.value = cardsNapoleon.value.filter(c => c.id !== cardToDelete.value.id)
   } catch (e) {
-    alert('Erreur lors de la suppression.');
-    console.error(e);
+    alert('Erreur lors de la suppression.')
+    console.error(e)
   } finally {
-    cardToDelete.value = null;
+    cardToDelete.value = null
   }
 }
 
-// Affiche ou masque la section "situation" (et ferme les autres cartes)
+// Active ou désactive l’affichage de la situation pour une carte
 function toggleSituation(card) {
   cardsNapoleon.value.forEach((c) => {
-    if (c.id !== card.id) c.showSituation = false; // désactive les autres
-  });
-  card.showSituation = !card.showSituation; // toggle la carte actuelle
+    if (c.id !== card.id) c.showSituation = false
+  })
+  card.showSituation = !card.showSituation
 }
 
-// Fonction qui retourne les sections à afficher, tronquées ou non
+// Retourne les sections tronquées si nécessaire (300 caractères max)
 function getTruncatedSections(card) {
   const sections = [
     { title: 'Date et lieu', content: card.lieu || '' },
     { title: 'Forces en présence', content: card.forces || '' },
     { title: 'Pertes', content: card.pertes || '' },
-  ];
+  ]
 
-  // Si la situation est visible, on retourne tout
-  if (card.showSituation) return sections;
+  if (card.showSituation) return sections
 
-  // Sinon, on tronque à 300 caractères cumulés
-  let totalLength = 0;
-  const truncatedSections = [];
+  let totalLength = 0
+  const truncatedSections = []
 
   for (const section of sections) {
-    const remaining = 300 - totalLength;
-    if (remaining <= 0) break;
+    const remaining = 300 - totalLength
+    if (remaining <= 0) break
 
-    const content = section.content.slice(0, remaining);
-    totalLength += content.length;
+    const content = section.content.slice(0, remaining)
+    totalLength += content.length
     truncatedSections.push({
       title: section.title,
       content: content + (content.length < section.content.length ? '...' : ''),
-    });
+    })
   }
 
-  return truncatedSections;
+  return truncatedSections
 }
 
-// Gestion d'un événement d'action (depuis GenericCard)
+// Action personnalisée déclenchée depuis GenericCard (non utilisée ici)
 function handleAction(payload) {
-  console.log('Action principale :', payload);
+  console.log('Action principale :', payload)
 }
 </script>
 
 <style scoped>
-/* Conteneur principal */
+/* Conteneur des cartes */
 .card-container {
   display: flex;
   flex-direction: column;
@@ -301,15 +296,15 @@ function handleAction(payload) {
   background-color: #f5f5f5;
 }
 
-/* Description textuelle des cartes */
+/* Style du texte des descriptions */
 .card-description {
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
   font-family: Arial, sans-serif;
   line-height: 1.6;
   text-align: justify;
 }
 
-/* Titres dans la description (sections) */
+/* Titre des sections */
 .card-description h4 {
   font-weight: bold;
   margin: 1rem 0 0.5rem;
@@ -317,21 +312,21 @@ function handleAction(payload) {
   color: #333;
 }
 
-/* Paragraphes de texte dans la description */
+/* Paragraphe de chaque section */
 .card-description p {
   margin-bottom: 1rem;
   color: #555;
 }
 
-/* Classe appliquée quand showSituation est actif : permet le scroll */
+/* Scroll activé si showSituation est actif */
 .scrollable {
-  max-height: 420px; /* limite la hauteur visible */
+  max-height: 420px;
   overflow-y: auto;
   padding-right: 0.5rem;
-  scrollbar-width: thin; /* Firefox */
+  scrollbar-width: thin;
 }
 
-/* Scrollbar stylisée pour Webkit (Chrome, Safari) */
+/* Scrollbar pour Webkit (Chrome/Safari) */
 .scrollable::-webkit-scrollbar {
   width: 6px;
 }
@@ -341,34 +336,33 @@ function handleAction(payload) {
   border-radius: 8px;
 }
 
-/* Boutons insérés via les slots */
+/* Style commun pour tous les boutons */
 button {
-  padding: 0.8rem 0.8rem; /* Ajoute de l'espace interne pour une apparence homogène */
-  border: 1px solid #ccc; /* Bordure grise légère */
-  border-radius: 100px; /* Coins légèrement arrondis */
-  background: #f8f8f8; /* Couleur de fond neutre */
-  color: #333; /* Couleur du texte sombre */
-  font-weight: 600; /* Texte légèrement en gras */
-  font-size: 1rem; /* Taille standard du texte */
-  cursor: pointer; /* Change le curseur en pointeur (main) pour indiquer une action */
-  transition: background 0.3s ease, transform 0.2s ease; /* Transition douce pour les interactions */
-  white-space: nowrap; /* Empêche les boutons de s'étirer ou de couper leur texte */
-  width: auto; /* Ajuste la largeur au contenu */
-  min-width: fit-content; /* Garde une largeur minimale suffisante pour s'adapter au contenu */
-  text-align: center; /* Centre le texte dans le bouton */
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 100px;
+  background: #f8f8f8;
+  color: #333;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  white-space: nowrap;
+  width: auto;
+  min-width: fit-content;
+  text-align: center;
 }
 
-/* Effet au survol des boutons */
-button:hover{
-  background: #e0e0e0; /* Couleur légèrement plus sombre au survol */
-  transform: translateY(-2px); /* Soulève légèrement le bouton */
+/* Effets au survol des boutons */
+button:hover {
+  background: #e0e0e0;
+  transform: translateY(-2px);
 }
 
-/* Effet lorsque le bouton est cliqué */
+/* Effets lors du clic sur les boutons */
 button:active {
-  background: #d6d6d6; /* Couleur encore plus sombre lorsqu'il est cliqué */
-  transform: translateY(1px); /* Réduit légèrement le bouton */
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Ajoute un effet d'enfoncement */
+  background: #d6d6d6;
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-
 </style>

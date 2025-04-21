@@ -1,24 +1,43 @@
 <template>
-  <!-- Fond sombre cliquable pour fermer la modale -->
+  <!-- Fond sombre cliquable (fermeture en cliquant en dehors de la modale) -->
   <div class="modal-backdrop" @click.self="close">
+
+    <!-- Contenu principal de la modale -->
     <div class="modal">
       <h2>Ajouter une bataille</h2>
 
+      <!-- Formulaire pour ajouter une bataille -->
+      <!-- .prevent : empêche l'envoi classique -->
+      <!-- .enter : empêche "Entrée" sauf dans un textarea -->
       <form @submit.prevent="submit" @keydown.enter="handleEnter">
 
-        <!-- Ligne : titre + année -->
+        <!-- Ligne avec les champs Titre et Année -->
         <div class="form-row">
           <div class="form-group">
             <label for="title">Titre :</label>
-            <input id="title" v-model="newCard.title" type="text" />
+            <!-- Champ texte lié au titre de la bataille -->
+            <!-- Affiche une classe 'invalid' si vide et erreur activée -->
+            <input id="title" v-model="newCard.title" type="text"
+                   :class="{ 'invalid': showError && !newCard.title.trim() }"/>
           </div>
           <div class="form-group">
             <label for="year">Année :</label>
-            <input id="year" v-model.number="newCard.year" type="number" />
+            <!-- Champ numérique lié à l’année -->
+            <!-- Classe 'invalid' si l’année est incorrecte -->
+            <input id="year" v-model.number="newCard.year" type="number"
+                   :class="{ 'invalid': (showError && !newCard.year) || yearError }"/>
           </div>
         </div>
 
-        <!-- Ligne : lieu + forces -->
+        <!-- Ligne avec la checkbox "Victoire" -->
+        <div class="form-row">
+          <div class="checkbox-group">
+            <label for="victoire">Victoire napoléonienne :</label>
+            <input type="checkbox" id="victoire" v-model="newCard.victory" />
+          </div>
+        </div>
+
+        <!-- Ligne avec les champs Lieu et Forces -->
         <div class="form-row">
           <div class="form-group">
             <label for="lieu">Lieu :</label>
@@ -30,16 +49,17 @@
           </div>
         </div>
 
-        <!-- Champ : pertes -->
+        <!-- Champ pour les pertes -->
         <label for="pertes">Pertes :</label>
         <textarea id="pertes" v-model="newCard.pertes" rows="4" />
 
-        <!-- Champ : situation -->
+        <!-- Champ pour la situation -->
         <label for="situation">Situation :</label>
         <textarea id="situation" v-model="newCard.situation" rows="5" />
 
-        <!-- Champ image -->
+        <!-- Sélection d’image -->
         <label for="image">Image :</label>
+        <!-- Zone texte simulant la sélection de fichier -->
         <input
             id="image"
             type="text"
@@ -47,6 +67,7 @@
             v-model="fileName"
             @click="openFileDialog"
         />
+        <!-- Input réel invisible pour l’image -->
         <input
             ref="hiddenFileInput"
             type="file"
@@ -55,79 +76,116 @@
             style="display: none"
         />
 
-        <!-- Boutons -->
+        <!-- Boutons de validation -->
         <div class="actions">
-          <button type="submit">Ajouter</button>
-          <button type="button" @click="close">Annuler</button>
+          <!-- Message d’erreur si le titre est manquant -->
+          <p v-if="showError" class="error-message">
+            Le champ <strong>titre</strong> est obligatoire.
+          </p>
+          <!-- Message d’erreur si l’année est hors bornes -->
+          <p v-if="yearError" class="error-message">
+            L’année doit être comprise entre 1769 et 1815.<br />
+            C’est compliqué de faire une bataille napoléonienne sans Napoléon !
+          </p>
+          <!-- Boutons d'action -->
+          <button type="button" class="cancel-button" @click="close">Annuler</button>
+          <button type="submit" class="save-button">Ajouter</button>
         </div>
-
       </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive } from 'vue'
 
-const emit = defineEmits(['close', 'add']);
+// Déclaration des événements envoyés vers le parent (fermeture et ajout)
+const emit = defineEmits(['close', 'add'])
 
+// Données du formulaire, regroupées dans un objet réactif
 const newCard = reactive({
   title: '',
   year: '',
+  victory: true,      // Par défaut cochée
   lieu: '',
   forces: '',
   pertes: '',
   situation: '',
   image: ''
-});
+})
 
-const fileName = ref('');
-const hiddenFileInput = ref(null);
+// Nom du fichier image sélectionné
+const fileName = ref('')
 
-// Bloque Enter sauf dans textarea
+// Référence vers l’input file caché
+const hiddenFileInput = ref(null)
+
+// Flags d’erreurs pour la validation des champs
+const showError = ref(false)
+const yearError = ref(false)
+
+// Empêche "Entrée" sauf dans un textarea
 function handleEnter(event) {
-  const tag = event.target.tagName.toLowerCase();
-  if (tag !== 'textarea') event.preventDefault();
+  const tag = event.target.tagName.toLowerCase()
+  if (tag !== 'textarea') event.preventDefault()
 }
 
-// Clic sur champ texte → ouvre le champ file caché
+// Ouvre le champ file invisible quand on clique sur le champ texte image
 function openFileDialog() {
-  if (hiddenFileInput.value) hiddenFileInput.value.click();
+  if (hiddenFileInput.value) hiddenFileInput.value.click()
 }
 
-// Quand une image est sélectionnée
+// Gère le chargement d’une image sélectionnée par l’utilisateur
 function updateFile(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  const file = event.target.files[0]
+  if (!file) return
 
-  fileName.value = file.name;
+  fileName.value = file.name
 
-  const reader = new FileReader();
+  const reader = new FileReader()
   reader.onload = () => {
-    newCard.image = reader.result;
-  };
-  reader.readAsDataURL(file);
+    newCard.image = reader.result
+  }
+  reader.readAsDataURL(file)
 }
 
-// Soumission du formulaire
+// Envoie les données au parent si validation OK
 function submit() {
-  const payload = { ...newCard };
+  showError.value = false
+  yearError.value = false
 
-  // Nettoie l’image (enlève le préfixe base64)
-  if (typeof payload.image === 'string' && payload.image.startsWith('data:image')) {
-    payload.image = payload.image.split(',')[1];
+  // Vérifie que le titre n'est pas vide
+  if (!newCard.title.trim()) {
+    showError.value = true
+    return
   }
 
-  emit('add', payload);
+  // Vérifie que l’année est comprise dans la période napoléonienne
+  if (!newCard.year || newCard.year < 1769 || newCard.year > 1815) {
+    yearError.value = true
+    return
+  }
+
+  // Prépare l'objet à envoyer
+  const payload = { ...newCard }
+
+  // Nettoie le base64 de l’image (enlève le préfixe data:image)
+  if (typeof payload.image === 'string' && payload.image.startsWith('data:image')) {
+    payload.image = payload.image.split(',')[1]
+  }
+
+  // Envoie l'événement add avec la nouvelle bataille
+  emit('add', payload)
 }
 
-// Ferme la modale
+// Ferme la modale (émission de l’événement close)
 function close() {
-  emit('close');
+  emit('close')
 }
 </script>
 
 <style scoped>
+/* Fond sombre de la modale (arrière-plan) */
 .modal-backdrop {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -139,6 +197,7 @@ function close() {
   padding: 1rem;
 }
 
+/* Boîte centrale de la modale */
 .modal {
   background: white;
   padding: 2rem;
@@ -150,6 +209,7 @@ function close() {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
+/* Ligne de champs à deux colonnes */
 .form-row {
   display: flex;
   gap: 1rem;
@@ -157,17 +217,20 @@ function close() {
   flex-wrap: wrap;
 }
 
+/* Groupe de champ avec largeur minimum */
 .form-group {
   flex: 1;
   min-width: 200px;
 }
 
+/* Styles des labels */
 label {
   display: block;
   margin-top: 1rem;
   font-weight: bold;
 }
 
+/* Champs input et textarea */
 input,
 textarea {
   width: 100%;
@@ -180,44 +243,75 @@ textarea {
   box-sizing: border-box;
 }
 
+/* Limite la largeur de l’input image simulé */
 #image {
   max-width: 200px;
 }
 
+/* Boutons de bas de formulaire */
 .actions {
-  margin-top: 1.5rem;
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  margin-top: 1.5rem;
 }
 
-/* Boutons insérés via les slots */
-.actions ::v-deep(button) {
-  padding: 0.8rem 0.8rem; /* Ajoute de l'espace interne pour une apparence homogène */
-  border: 1px solid #ccc; /* Bordure grise légère */
-  border-radius: 100px; /* Coins légèrement arrondis */
-  background: #f8f8f8; /* Couleur de fond neutre */
-  color: #333; /* Couleur du texte sombre */
-  font-weight: 600; /* Texte légèrement en gras */
-  font-size: 1rem; /* Taille standard du texte */
-  cursor: pointer; /* Change le curseur en pointeur (main) pour indiquer une action */
-  transition: background 0.3s ease, transform 0.2s ease; /* Transition douce pour les interactions */
-  white-space: nowrap; /* Empêche les boutons de s'étirer ou de couper leur texte */
-  width: auto; /* Ajuste la largeur au contenu */
-  min-width: fit-content; /* Garde une largeur minimale suffisante pour s'adapter au contenu */
-  text-align: center; /* Centre le texte dans le bouton */
+/* Bouton Annuler */
+button.cancel-button {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+button.cancel-button:hover {
+  background: #e0e0e0;
 }
 
-/* Effet au survol des boutons */
-.actions ::v-deep(button:hover) {
-  background: #e0e0e0; /* Couleur légèrement plus sombre au survol */
-  transform: translateY(-2px); /* Soulève légèrement le bouton */
+/* Bouton Ajouter */
+button.save-button {
+  background: #4CAF50;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+button.save-button:hover {
+  background: #43a047;
 }
 
-/* Effet lorsque le bouton est cliqué */
-.actions ::v-deep(button:active) {
-  background: #d6d6d6; /* Couleur encore plus sombre lorsqu'il est cliqué */
-  transform: translateY(1px); /* Réduit légèrement le bouton */
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Ajoute un effet d'enfoncement */
+/* Champ invalide (bordure rouge) */
+.invalid {
+  border: 2px solid #d32f2f;
+  background-color: #fff4f4;
+}
+
+/* Messages d'erreur */
+.error-message {
+  color: #d32f2f;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+  margin-right: auto;
+}
+
+/* Hauteur standardisée des boutons */
+button {
+  height: 42px;
+}
+
+/* Groupe de la checkbox "victoire" */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  white-space: nowrap;
+}
+.checkbox-group label {
+  margin: 0;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 </style>
