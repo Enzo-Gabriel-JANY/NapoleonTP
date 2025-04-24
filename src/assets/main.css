@@ -1,0 +1,27 @@
+img{
+    max-width:  100%;
+}
+div{
+    border: solid 1px black;
+    margin: 0.2%;
+}
+.card{
+    display: flex;
+}
+.head{
+    width: 30%;
+    align-content: center;
+    justify-content: center;
+    text-align: center;
+}
+.main{
+    width: 60%;
+}
+body{
+    width: 70%;
+    margin: auto;
+}
+.actions{
+    display: flex;
+    flex-direction: column;
+}
