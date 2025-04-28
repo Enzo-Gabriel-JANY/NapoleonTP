@@ -2,11 +2,14 @@
 import cards from "@/components/Cards.vue";
 
 
+
+
 </script>
 
 <template>
 
-  <cards />
+<cards/>
+
 </template>
 
 <style>
