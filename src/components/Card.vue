@@ -59,8 +59,9 @@ const getDesc = (item) => {
 .card {
   display: flex;
   width: 100%;
-  background-color: darkgray;
-  border-radius: 10px;
+  background-color: #B8AFA2  ;
+  border-radius: 5px;
+
 }
 .head {
   width: 18%;
@@ -71,14 +72,22 @@ const getDesc = (item) => {
 }
 .main {
   width: 75%;
-  background-color: lightgrey;
-  margin-top: 1%;
+  background-color : #FFFFF0;
+  margin: 1%;
   max-height: 275px;
   overflow-y: auto;
+  border-radius: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  padding: 0.5%
 }
 img {
   width: 100%;
   height: 200px;
   object-fit: cover;
+}
+.action{
+  padding-right : 1%;
+  padding-top: 1%;
 }
 </style>

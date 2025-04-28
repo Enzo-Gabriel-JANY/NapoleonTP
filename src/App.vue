@@ -1,6 +1,7 @@
 <script setup>
 import cards from "@/components/Card.vue";
 import CardsList from "@/components/CardsList.vue";
+import AddBatailleButton from "@/components/AddBatailleButton.vue";
 
 
 
@@ -8,7 +9,7 @@ import CardsList from "@/components/CardsList.vue";
 </script>
 
 <template>
-
+<AddBatailleButton/>
 <CardsList/>
 
 </template>
