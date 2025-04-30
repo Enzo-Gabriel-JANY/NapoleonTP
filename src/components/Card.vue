@@ -1,6 +1,8 @@
 <!-- src/components/Card.vue -->
 <script setup>
-import HideShowDescButton from "@/components/HideShowDescButton.vue"
+import HideShowDescButton from "@/components/Button/HideShowDescButton.vue"
+import DeleteButton from "@/components/Button/DeleteButton.vue";
+import EditButton from "@/components/Button/EditButton.vue";
 const props = defineProps({
   item: Object,
   isExpanded: Function,
@@ -28,6 +30,7 @@ function cutDesc(description) {
 const getDesc = (item) => {
   return props.isExpanded(item.id) ? item.description : cutDesc(item.description)
 }
+
 </script>
 
 <template>
@@ -51,6 +54,11 @@ const getDesc = (item) => {
     </div>
     <div class="action">
       <HideShowDescButton :bataille-id="item.id" @toggle="toggleDescription" :is-expanded="isExpanded(item.id)" />
+      <EditButton></EditButton>
+      <DeleteButton
+          :idBataille="item.id"
+          @batailleSupprimee="$emit('batailleSupprimee', $event)"
+      />
     </div>
   </div>
 </template>
@@ -69,12 +77,13 @@ const getDesc = (item) => {
   justify-content: center;
   text-align: center;
   margin: 1%;
+  font-family: Arial, sans-serif;
 }
 .main {
   width: 75%;
   background-color : #FFFFF0;
   margin: 1%;
-  max-height: 275px;
+  max-height: 270px;
   overflow-y: auto;
   border-radius: 5px;
   font-family: Arial, sans-serif;
@@ -83,7 +92,7 @@ const getDesc = (item) => {
 }
 img {
   width: 100%;
-  height: 200px;
+  height: 170px;
   object-fit: cover;
 }
 .action{
