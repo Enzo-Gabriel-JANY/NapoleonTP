@@ -13,7 +13,6 @@ const itemEdited = ref({})
 const data = ref(null)
 const expandedItems = ref([])
 const modalForm = ref(false)
-
 const searchTerm = ref('')
 const searchTriggered = ref(false)
 

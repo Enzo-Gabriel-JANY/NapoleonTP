@@ -19,7 +19,7 @@ function supprimerBataille(id) {
         if (response.ok) {
           console.log(`Bataille ${id} supprimée.`);
           console.log(`http://localhost:5000/bataille/${id}`)
-          emit('batailleSupprimee', id); // 🔥 Notifie le parent
+          emit('batailleSupprimee', id);
         } else {
           console.error('Erreur lors de la suppression.');
 
