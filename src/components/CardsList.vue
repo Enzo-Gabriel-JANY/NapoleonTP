@@ -27,7 +27,7 @@ onMounted(async () => {
         props.voidItem ?? {
           id: "-1",
           nom: '',
-          date: new Date(),
+          date: new Date(1769, 7, 15) ,
           lieu: '',
           img: '',
           description: {
@@ -94,7 +94,7 @@ watch(modalForm, (newVal) => {
     itemEdited.value = JSON.parse(JSON.stringify(props.voidItem ?? {
       id: -1,
       nom: '',
-      date: new Date(),
+      date: new Date(1769, 7, 15),
       lieu: '',
       img: '',
       description: {

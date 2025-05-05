@@ -23,13 +23,24 @@ function handleFileUpload(event) {
 }
 const closeEmit = defineEmits(['close', 'updateItem'])
 
-const formattedDate = ref(moment(props.item.date, 'D MMMM YYYY').toDate())
+const formattedDate = ref(new Date(props.item.date)) // Par défaut, tu convertis en Date
+
+
+if (props.item.id == -1) {
+
+  if (moment(props.item.date, 'D MMMM YYYY', true).isValid()) {
+    formattedDate.value = moment(props.item.date, 'D MMMM YYYY').toDate();
+  } else {
+    formattedDate.value = new Date(props.item.date);
+  }
+}
+
 const form = ref(null)
 
 const rules = {
   required: v => !!v || 'Ce champ est requis',
   validDateRange: v => {
-    console.log('Valeur reçue pour validation :', v)
+
     const date = new Date(v)
     if (isNaN(date.getTime())) return 'Date invalide'
 

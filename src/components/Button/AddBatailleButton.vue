@@ -13,8 +13,8 @@ const changeBackgroundColor = () => {
 </script>
 
 <template>
-  <div class="icon-container">
-    <svg-icon size="50px" type="mdi" :path="currentIcon" :style="{ backgroundColor: colors }" class="icon" @mouseover="changeBackgroundColor" @mouseout="changeBackgroundColor" ></svg-icon>
+  <div class="icon-container" title="Créer une bataille">
+    <svg-icon title="Créer une bataille" size="50px" type="mdi" :path="currentIcon" :style="{ backgroundColor: colors }" class="icon" @mouseover="changeBackgroundColor" @mouseout="changeBackgroundColor" ></svg-icon>
   </div>
 </template>
 
