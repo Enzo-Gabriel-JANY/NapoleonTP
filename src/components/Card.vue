@@ -3,12 +3,15 @@
 import HideShowDescButton from "@/components/Button/HideShowDescButton.vue"
 import DeleteButton from "@/components/Button/DeleteButton.vue";
 import EditButton from "@/components/Button/EditButton.vue";
+import Modale from "@/components/Modale.vue";
+import {ref} from "vue";
 const props = defineProps({
   item: Object,
   isExpanded: Function,
   toggleDescription: Function
 })
-
+const modalOpen = ref(false)
+const itemEdited = ref({})
 function cutDesc(description) {
   let counter = 0;
   let res = { dateLieu: "", forcePresentes: "", pertes: "", situationGenerale: "" };
@@ -26,11 +29,26 @@ function cutDesc(description) {
 
   return res;
 }
-
+function itemEdit(){
+  itemEdited.value = JSON.parse(JSON.stringify(props.item))
+  console.log(itemEdited)
+}
+itemEdit()
 const getDesc = (item) => {
   return props.isExpanded(item.id) ? item.description : cutDesc(item.description)
 }
-
+function updateItem(updateItem){
+  props.item.nom = updateItem.nom
+  props.item.date = updateItem.date
+  props.item.lieu = updateItem.lieu
+  props.item.img = updateItem.img
+  props.item.description.dateLieu = updateItem.description.dateLieu
+  props.item.description.pertes = updateItem.description.pertes
+  props.item.description.situationGenerale = updateItem.description.situationGenerale
+  props.item.description.forcesPresentes =  updateItem.description.forcesPresentes
+  props.item.victoire = updateItem.victoire
+  console.log(updateItem)
+}
 </script>
 
 <template>
@@ -54,11 +72,13 @@ const getDesc = (item) => {
     </div>
     <div class="action">
       <HideShowDescButton :bataille-id="item.id" @toggle="toggleDescription" :is-expanded="isExpanded(item.id)" />
-      <EditButton></EditButton>
+      <EditButton  @click="modalOpen = true"  ></EditButton>
       <DeleteButton
           :idBataille="item.id"
           @batailleSupprimee="$emit('batailleSupprimee', $event)"
       />
+      <Modale v-model="modalOpen" :item="itemEdited" @update="updateItem"></Modale>
+
     </div>
   </div>
 </template>

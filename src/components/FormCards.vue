@@ -1,46 +1,177 @@
 <script setup>
-const formProps = defineProps({
-  id : Number ,
-  titre : String ,
-  date : Date ,
-  lieu : String ,
-  img : String ,
-  desc_forces_presentes : String ,
-  desc_date_lieu : String ,
-  desc_pertes : String
+import moment from 'moment'
+import 'moment/locale/fr'
+import { VDateInput } from 'vuetify/labs/VDateInput'
+import '@mdi/font/css/materialdesignicons.css'
+import { ref } from 'vue'
+const minDate = '1769-08-15'
+const maxDate = '1821-05-05'
+const props = defineProps({
+  item: Object,
+  newId: Number
 })
-const save = defineEmits(['save'])
+console.log(props.item)
+const closeEmit = defineEmits(['close', 'updateItem'])
 
-const handleClick = () => {
-  save('save', formProps)
+const formattedDate = ref(moment(props.item.date, 'D MMMM YYYY').toDate())
+const form = ref(null)
+
+const rules = {
+  required: v => !!v || 'Ce champ est requis',
+  validDateRange: v => {
+    console.log('Valeur reçue pour validation :', v)
+    const date = new Date(v)
+    if (isNaN(date.getTime())) return 'Date invalide'
+
+    const min = new Date(1769, 7, 15).getTime()
+    const max = new Date(1821, 4, 5).getTime()
+    const val = date.getTime()
+    return (val >= min && val <= max) || 'Date invalide : entre 15 août 1769 et 5 mai 1821'
+  }
+}
+/*
+Besoin de clear bataille sinon stocker car reactive ici je créer une copie pas reactive qui est send
+ */
+async function createBataille() {
+  try {
+    props.item.date = moment(formattedDate.value).locale('fr').format('D MMMM YYYY')
+    props.item.id = props.newId.toString()
+    const response = await fetch('http://localhost:5000/bataille', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(props.item)
+    })
+
+    const data = await response.json()
+
+
+
+  } catch (error) {
+    console.error('Erreur lors de la création :', error)
+    throw error
+  }
+}
+
+
+console.log(props.newId)
+async function updateBataille(id, updatedData) {
+  try {
+    props.item.date = moment(formattedDate.value).locale('fr').format('D MMMM YYYY')
+
+    const response = await fetch(`http://localhost:5000/bataille/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedData)
+    })
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour :', error)
+    throw error
+  }
+}
+
+async function close(id, updatedData) {
+  const isValid = await form.value.validate()
+  if (!isValid.valid) return
+
+  if (id === -1) {
+    await createBataille()
+  } else {
+    await updateBataille(id, updatedData)
+  }
+
+  closeEmit('updateItem', props.item)
+  closeEmit('close')
 }
 </script>
-
 <template>
-<form @submit.prevent="sendCards">
-  <input v-model="formProps.titre"  type="text" placeholder="Nom de la bataille " >
-  <input v-model="formProps.lieu" type="text" placeholder="Lieu de la bataille">
-  <input v-model="formProps.img" type="text" placeholder="Lien de l'image">
-  <textarea v-model="formProps.desc_forces_presentes" placeholder="Forces présentes"/>
-  <textarea v-model="formProps.desc_date_lieu" placeholder="Date et lieu"/>
-  <textarea v-model="formProps.desc_pertes" placeholder="Pertes"/>
-  <input type="submit" value="Enregistrer" @click="save">
-</form>
-</template>
+  <v-form ref="form">
+    <v-text-field
+        v-model="props.item.nom"
+        label="Nom de la bataille"
+        :rules="[rules.required]"
+        required
+    ></v-text-field>
 
+    <v-date-input
+        v-model="formattedDate"
+        label="Date de la bataille"
+        locale="fr"
+        color="primary"
+        variant="outlined"
+        class="date-input"
+        :min="minDate"
+        :max="maxDate"
+        :rules="[rules.required, rules.validDateRange]"
+    ></v-date-input>
+
+    <v-text-field
+        v-model="props.item.lieu"
+        label="Lieu de la bataille"
+        :rules="[rules.required]"
+        required
+    ></v-text-field>
+
+    <v-text-field
+        v-model="props.item.img"
+        label="Lien de l'image"
+    ></v-text-field>
+
+    <v-textarea
+        v-model="props.item.description.dateLieu"
+        label="Date et lieu"
+        auto-grow
+        :rules="[rules.required]"
+    ></v-textarea>
+
+    <v-textarea
+        v-model="props.item.description.forcePresentes"
+        label="Forces présentes"
+        auto-grow
+        :rules="[rules.required]"
+    ></v-textarea>
+
+    <v-textarea
+        v-model="props.item.description.pertes"
+        label="Pertes"
+        auto-grow
+        :rules="[rules.required]"
+    ></v-textarea>
+
+    <v-textarea
+        v-model="props.item.description.situationGenerale"
+        label="Situation générale"
+        auto-grow
+    ></v-textarea>
+
+    <v-checkbox
+        v-model="props.item.victoire"
+        label="Victoire"
+    ></v-checkbox>
+
+    <v-btn color="primary" @click="close(props.item.id, props.item)">
+      Enregistrer
+    </v-btn>
+  </v-form>
+</template>
 <style scoped>
-form{display: flex ;
-flex-direction: column ;
+form {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   margin-top: 2%;
   margin-bottom: 2%;
-
-
 }
+
 form :is(input, textarea) {
   border-radius: 6px;
   margin-top: 1%;
 }
 
-
+.date-input {
+  --v-theme-on-surface: #000;
+}
 </style>
