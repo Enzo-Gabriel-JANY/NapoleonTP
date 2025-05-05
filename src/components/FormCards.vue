@@ -10,7 +10,17 @@ const props = defineProps({
   item: Object,
   newId: Number
 })
-console.log(props.item)
+function handleFileUpload(event) {
+  const file = event.target?.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+
+    props.item.img = reader.result
+  }
+  reader.readAsDataURL(file)
+}
 const closeEmit = defineEmits(['close', 'updateItem'])
 
 const formattedDate = ref(moment(props.item.date, 'D MMMM YYYY').toDate())
@@ -115,10 +125,13 @@ async function close(id, updatedData) {
         required
     ></v-text-field>
 
-    <v-text-field
-        v-model="props.item.img"
-        label="Lien de l'image"
-    ></v-text-field>
+      <v-file-input
+          label="Image de la bataille"
+          accept="image/*"
+          @change="handleFileUpload"
+          prepend-icon="mdi-image"
+      ></v-file-input>
+
 
     <v-textarea
         v-model="props.item.description.dateLieu"
