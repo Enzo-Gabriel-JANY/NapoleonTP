@@ -79,6 +79,7 @@ const filteredData = computed(() => {
   })
 })
 watch(data.value , newVal =>{
+
   data.value.length = newVal.value.length
 })
 function triggerSearch() {
@@ -107,6 +108,13 @@ watch(modalForm, (newVal) => {
     }))
   }
 })
+function handleNewBataille() {
+  if (!data.value) {
+    data.value = []
+  }
+  data.value.push({ ...itemEdited.value }) // clone to avoid reactivity issues
+  console.log(itemEdited.value )
+}
 </script>
 
 <template>
@@ -142,7 +150,7 @@ watch(modalForm, (newVal) => {
     />
   </div>
 
-  <Modale v-model="modalForm" :item="itemEdited" :newId="newID" />
+  <Modale v-model="modalForm" :item="itemEdited" :newId="newID"  @update:model-value="handleNewBataille"/>
 </template>
 
 <style>

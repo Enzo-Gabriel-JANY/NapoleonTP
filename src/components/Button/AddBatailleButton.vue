@@ -3,7 +3,6 @@ import SvgIcon from '@jamescoyle/vue-icon';
 import {ref} from "vue";
 import {mdiPlus} from "@mdi/js";
 const currentIcon = ref(mdiPlus);
-const emit = defineEmits( ['openForm']);
 const colors = ref('') ;
 const changeBackgroundColor = () => {
   colors.value = colors.value === "" ? "lightgrey" : "";

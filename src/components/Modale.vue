@@ -4,7 +4,7 @@ import FormCards from '@/components/FormCards.vue';
 
 // Déclaration de la liaison bidirectionnelle
 const open = defineModel();
-const emit = defineEmits(['update'])
+const emit = defineEmits(['update' ,'end'])
 const props = defineProps({
   item : Object ,
   newId: Number
