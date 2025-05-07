@@ -57,7 +57,7 @@ async function createBataille() {
   try {
     props.item.date = moment(formattedDate.value).locale('fr').format('D MMMM YYYY')
     props.item.id = props.newId.toString()
-    const response = await fetch('http://localhost:5000/bataille', {
+    const response = await fetch('http://localhost:3000/bataille', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -65,10 +65,20 @@ async function createBataille() {
       body: JSON.stringify(props.item)
     })
 
-    const data = await response.json()
 
 
+    if (response.ok) {
+      const text = await response.text(); // essaie d'abord de lire comme texte
 
+      if (text) {
+        const data = JSON.parse(text); // ou utiliser response.json() si tu es sûr
+        // suite du traitement
+      } else {
+        console.warn("Réponse vide");
+      }
+    } else {
+      console.error("Erreur HTTP :", response.status);
+    }
   } catch (error) {
     console.error('Erreur lors de la création :', error)
     throw error

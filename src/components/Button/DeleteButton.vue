@@ -12,7 +12,7 @@ const props = defineProps({
 const emit = defineEmits(['batailleSupprimee']);
 
 function supprimerBataille(id) {
-  fetch(`http://localhost:5000/bataille/${id}`, {
+  fetch(`http://localhost:3000/bataille/${id}`, {
     method: 'DELETE'
   })
       .then(response => {

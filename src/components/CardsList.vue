@@ -18,7 +18,7 @@ const searchTriggered = ref(false)
 
 onMounted(async () => {
   try {
-    const res = await fetch('http://localhost:5000/bataille')
+    const res = await fetch('http://localhost:3000/bataille')
     data.value = await res.json()
     getLastId()
 
