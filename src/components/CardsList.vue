@@ -19,15 +19,18 @@ const searchTriggered = ref(false)
 onMounted(async () => {
   try {
     const res = await fetch('http://localhost:3000/bataille')
-    data.value = await res.json()
+    const json = await res.json()
+
+    // 🔧 Corrige ici : on extrait juste le tableau
+    data.value = json.data ?? []
+
     getLastId()
 
-    // Initialisation sécurisée de itemEdited
     itemEdited.value = JSON.parse(JSON.stringify(
         props.voidItem ?? {
           id: "-1",
           nom: '',
-          date: new Date(1769, 7, 15) ,
+          date: new Date(1769, 7, 15),
           lieu: '',
           img: '',
           description: {
@@ -112,8 +115,15 @@ function handleNewBataille() {
   if (!data.value) {
     data.value = []
   }
-  data.value.push({ ...itemEdited.value }) // clone to avoid reactivity issues
-  console.log(itemEdited.value )
+  if (itemEdited.value.id !== -1){
+    data.value.push({ ...itemEdited.value }) // clone to avoid reactivity issues
+    console.log(itemEdited.value )
+  }
+
+}
+function del(item){
+  data.value.splice(item , 1)
+  console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 }
 </script>
 
@@ -147,6 +157,7 @@ function handleNewBataille() {
         :is-expanded="isExpanded"
         :toggle-description="toggleDescription"
         @batailleSupprimee="handleSuppression"
+        @del=""
     />
   </div>
 

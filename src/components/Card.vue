@@ -10,6 +10,8 @@ const props = defineProps({
   isExpanded: Function,
   toggleDescription: Function
 })
+
+
 const modalOpen = ref(false)
 const itemEdited = ref({})
 function cutDesc(description) {
@@ -49,6 +51,7 @@ function updateItem(updateItem){
   props.item.victoire = updateItem.victoire
   console.log(updateItem)
 }
+
 </script>
 
 <template>
@@ -76,6 +79,7 @@ function updateItem(updateItem){
       <DeleteButton
           :idBataille="item.id"
           @batailleSupprimee="$emit('batailleSupprimee', $event)"
+
       />
       <Modale v-model="modalOpen" :item="itemEdited" @update="updateItem"></Modale>
 

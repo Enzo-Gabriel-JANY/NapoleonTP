@@ -54,9 +54,9 @@ const rules = {
 Besoin de clear bataille sinon stocker car reactive ici je créer une copie pas reactive qui est send
  */
 async function createBataille() {
+  props.item.id = props.newId + 1
+  props.item.id = props.item.id
   try {
-    props.item.date = moment(formattedDate.value).locale('fr').format('D MMMM YYYY')
-    props.item.id = props.newId.toString()
     const response = await fetch('http://localhost:3000/bataille', {
       method: 'POST',
       headers: {
@@ -65,23 +65,17 @@ async function createBataille() {
       body: JSON.stringify(props.item)
     })
 
-
-
-    if (response.ok) {
-      const text = await response.text(); // essaie d'abord de lire comme texte
-
-      if (text) {
-        const data = JSON.parse(text); // ou utiliser response.json() si tu es sûr
-        // suite du traitement
-      } else {
-        console.warn("Réponse vide");
-      }
-    } else {
-      console.error("Erreur HTTP :", response.status);
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error("Erreur du backend :", errorData.message || errorData)
+      return
     }
+
+    const data = await response.json()
+    console.log("Succès :", data)
+
   } catch (error) {
-    console.error('Erreur lors de la création :', error)
-    throw error
+    console.error("Erreur réseau :", error)
   }
 }
 
@@ -91,7 +85,7 @@ async function updateBataille(id, updatedData) {
   try {
     props.item.date = moment(formattedDate.value).locale('fr').format('D MMMM YYYY')
 
-    const response = await fetch(`http://localhost:5000/bataille/${id}`, {
+    const response = await fetch(`http://localhost:3000/bataille/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
