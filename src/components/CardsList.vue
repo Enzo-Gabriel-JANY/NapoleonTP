@@ -24,7 +24,6 @@ onMounted(async () => {
     // 🔧 Corrige ici : on extrait juste le tableau
     data.value = json.data ?? []
 
-    getLastId()
 
     itemEdited.value = JSON.parse(JSON.stringify(
         props.voidItem ?? {
@@ -95,6 +94,7 @@ function getLastId() {
 
 watch(modalForm, (newVal) => {
   if (newVal) {
+    getLastId()
     itemEdited.value = JSON.parse(JSON.stringify(props.voidItem ?? {
       id: -1,
       nom: '',

@@ -5,6 +5,7 @@ import DeleteButton from "@/components/Button/DeleteButton.vue";
 import EditButton from "@/components/Button/EditButton.vue";
 import Modale from "@/components/Modale.vue";
 import {ref} from "vue";
+import moment from "moment";
 const props = defineProps({
   item: Object,
   isExpanded: Function,
@@ -51,13 +52,15 @@ function updateItem(updateItem){
   props.item.victoire = updateItem.victoire
   console.log(updateItem)
 }
-
+function formatDate(dateString) {
+  return moment(dateString).locale('fr').format('D MMMM YYYY')
+}
 </script>
 
 <template>
   <div class="card">
     <div class="head">
-      <h2>{{ item.nom }} - {{ item.date.split(' ')[2] }}</h2>
+      <h2>{{ item.nom }} - {{ formatDate(item.date).split(' ')[2] }}</h2>
       <img :src="item.img" />
     </div>
     <div class="main">

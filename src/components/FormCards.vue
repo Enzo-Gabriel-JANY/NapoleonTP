@@ -3,7 +3,7 @@ import moment from 'moment'
 import 'moment/locale/fr'
 import { VDateInput } from 'vuetify/labs/VDateInput'
 import '@mdi/font/css/materialdesignicons.css'
-import { ref } from 'vue'
+import {ref, watch} from 'vue'
 const minDate = '1769-08-15'
 const maxDate = '1821-05-05'
 const props = defineProps({
@@ -40,22 +40,22 @@ const form = ref(null)
 const rules = {
   required: v => !!v || 'Ce champ est requis',
   validDateRange: v => {
-
     const date = new Date(v)
     if (isNaN(date.getTime())) return 'Date invalide'
-
     const min = new Date(1769, 7, 15).getTime()
     const max = new Date(1821, 4, 5).getTime()
     const val = date.getTime()
     return (val >= min && val <= max) || 'Date invalide : entre 15 août 1769 et 5 mai 1821'
-  }
+  },
+  min10: v => (v && v.length >= 10) || 'Minimum 10 caractères'
 }
+
 /*
 Besoin de clear bataille sinon stocker car reactive ici je créer une copie pas reactive qui est send
  */
 async function createBataille() {
   props.item.id = props.newId + 1
-  props.item.id = props.item.id
+
   try {
     const response = await fetch('http://localhost:3000/bataille', {
       method: 'POST',
@@ -84,18 +84,28 @@ console.log(props.newId)
 async function updateBataille(id, updatedData) {
   try {
     props.item.date = moment(formattedDate.value).locale('fr').format('D MMMM YYYY')
+    props.item.id = Number(props.item.id)
+    const idString = Number(id);
 
-    const response = await fetch(`http://localhost:3000/bataille/${id}`, {
+    const url = `http://localhost:3000/bataille/${idString}`;
+    console.log(props.item)
+    const response = await fetch(url, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(updatedData)
     })
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Erreur du backend :", errorData.message || errorData);
+      return;
+    }
   } catch (error) {
     console.error('Erreur lors de la mise à jour :', error)
     throw error
   }
+
 }
 
 async function close(id, updatedData) {
@@ -152,7 +162,7 @@ async function close(id, updatedData) {
         v-model="props.item.description.dateLieu"
         label="Date et lieu"
         auto-grow
-        :rules="[rules.required]"
+        :rules="[rules.required , rules.min10]"
     ></v-textarea>
 
     <v-textarea
@@ -202,4 +212,26 @@ form :is(input, textarea) {
 .date-input {
   --v-theme-on-surface: #000;
 }
+
+ form {
+   display: flex;
+   flex-direction: column;
+   gap: 20px;
+   padding: 24px;
+
+   border-radius: 12px;
+ }
+
+
+
+
+
+/* Optionnel : améliore l'espacement et lisibilité */
+.v-btn {
+  align-self: flex-end;
+  margin-top: 16px;
+}
+
 </style>
+
+

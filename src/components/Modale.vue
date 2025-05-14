@@ -21,10 +21,10 @@ function update(updatedItem){
 </script>
 
 <template>
-  <v-dialog v-model="open" max-width="100%" transition="dialog-fade" hide-overlay>
-    <v-card>
-      <v-card-title class="headline">Ajouter bataille</v-card-title>
-      <v-card-text>
+  <v-dialog v-model="open" max-width="60%" transition="dialog-fade" hide-overlay >
+    <v-card style="background-color: #B8AFA2;">
+      <v-card-title class="headline text-center"> Bataille</v-card-title>
+      <v-card-text style="background-color: #B8AFA2;">
         <FormCards :item="props.item" @close="open = false" @updateItem="update" :new-id="props.newId"/>
       </v-card-text>
       <v-card-actions>

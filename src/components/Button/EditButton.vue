@@ -19,10 +19,11 @@ const changeBackgroundColor = () => {
 </template>
 
 <style scoped>
-.icon{
+.icon {
   border-radius: 50%;
-  margin-left: 5%;
-  border: #222222 , solid , 1.5px;
+  margin-left: 3%;
+  border: 1.5px solid #222222;
   margin-top: 7%;
+  cursor: pointer;
 }
 </style>
